@@ -29,9 +29,9 @@ CORS(app)
 # ─────────────────────────────────────────────
 
 _data_queue: queue.Queue = queue.Queue(maxsize=200)
-_last_frame: dict        = {}
-_reward_history: list    = []
-_sla_history: list       = []
+_last_frame: dict = {}
+_reward_history: list = []
+_sla_history: list = []
 _lock = threading.Lock()
 
 
@@ -50,7 +50,7 @@ def push_frame(frame: dict):
         _data_queue.put_nowait(frame)
     except queue.Full:
         try:
-            _data_queue.get_nowait()   # drop oldest
+            _data_queue.get_nowait()  # drop oldest
         except queue.Empty:
             pass
         _data_queue.put_nowait(frame)
@@ -59,6 +59,7 @@ def push_frame(frame: dict):
 # ─────────────────────────────────────────────
 # Routes
 # ─────────────────────────────────────────────
+
 
 @app.route("/")
 def index():
@@ -70,7 +71,7 @@ def stream():
     """Server-Sent Events endpoint — pushes JSON frames to the browser."""
 
     def event_generator():
-        heartbeat_interval = 15   # send heartbeat every N seconds to keep alive
+        heartbeat_interval = 15  # send heartbeat every N seconds to keep alive
         last_heartbeat = time.time()
 
         while True:
@@ -100,11 +101,13 @@ def stream():
 def history():
     """Return rolling reward and SLA violation history for initial chart render."""
     with _lock:
-        return jsonify({
-            "reward_history": _reward_history[-500:],
-            "sla_history":    _sla_history[-500:],
-            "last_frame":     _last_frame,
-        })
+        return jsonify(
+            {
+                "reward_history": _reward_history[-500:],
+                "sla_history": _sla_history[-500:],
+                "last_frame": _last_frame,
+            }
+        )
 
 
 @app.route("/push", methods=["POST"])
@@ -119,6 +122,7 @@ def push():
 # Dev server launcher
 # ─────────────────────────────────────────────
 
+
 def run_server(host: str = FLASK_HOST, port: int = FLASK_PORT, debug: bool = False):
     """Launch Flask in a background daemon thread."""
     t = threading.Thread(
@@ -126,5 +130,5 @@ def run_server(host: str = FLASK_HOST, port: int = FLASK_PORT, debug: bool = Fal
         daemon=True,
     )
     t.start()
-    print(f"🌐 Dashboard running at http://localhost:{port}")
+    print(f"Dashboard running at http://localhost:{port}")
     return t

@@ -16,8 +16,12 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 from config import (
-    PPO_TOTAL_TIMESTEPS, PPO_QUICK_TIMESTEPS,
-    PPO_LEARNING_RATE, PPO_N_STEPS, PPO_BATCH_SIZE, PPO_N_EPOCHS,
+    PPO_TOTAL_TIMESTEPS,
+    PPO_QUICK_TIMESTEPS,
+    PPO_LEARNING_RATE,
+    PPO_N_STEPS,
+    PPO_BATCH_SIZE,
+    PPO_N_EPOCHS,
     PPO_MODEL_PATH,
 )
 from rl_agent.network_env import NetworkSliceEnv
@@ -26,6 +30,7 @@ from rl_agent.network_env import NetworkSliceEnv
 # ─────────────────────────────────────────────
 # Custom Logging Callback
 # ─────────────────────────────────────────────
+
 
 class MetricsCallback(BaseCallback):
     """
@@ -41,30 +46,37 @@ class MetricsCallback(BaseCallback):
     def _on_step(self) -> bool:
         # Collect infos from vectorised env
         for info in self.locals.get("infos", []):
-            sla_ok    = info.get("sla_ok", [True, True, True])
-            n_viol    = sum(1 for ok in sla_ok if not ok)
-            alloc     = info.get("allocation", {})
-            util      = info.get("utilization",  {})
+            sla_ok = info.get("sla_ok", [True, True, True])
+            n_viol = sum(1 for ok in sla_ok if not ok)
+            alloc = info.get("allocation", {})
+            util = info.get("utilization", {})
             reward_val = self.locals.get("rewards", [0.0])
-            r = float(reward_val[0]) if hasattr(reward_val, "__len__") else float(reward_val)
+            r = (
+                float(reward_val[0])
+                if hasattr(reward_val, "__len__")
+                else float(reward_val)
+            )
 
-            self.metrics_store.append({
-                "step":            self.num_timesteps,
-                "reward":          r,
-                "sla_violations":  n_viol,
-                "alloc_embb":      alloc.get("eMBB",  0.33),
-                "alloc_urllc":     alloc.get("URLLC", 0.33),
-                "alloc_mmtc":      alloc.get("mMTC",  0.34),
-                "util_embb":       util.get("eMBB",   0.0),
-                "util_urllc":      util.get("URLLC",  0.0),
-                "util_mmtc":       util.get("mMTC",   0.0),
-            })
+            self.metrics_store.append(
+                {
+                    "step": self.num_timesteps,
+                    "reward": r,
+                    "sla_violations": n_viol,
+                    "alloc_embb": alloc.get("eMBB", 0.33),
+                    "alloc_urllc": alloc.get("URLLC", 0.33),
+                    "alloc_mmtc": alloc.get("mMTC", 0.34),
+                    "util_embb": util.get("eMBB", 0.0),
+                    "util_urllc": util.get("URLLC", 0.0),
+                    "util_mmtc": util.get("mMTC", 0.0),
+                }
+            )
         return True
 
 
 # ─────────────────────────────────────────────
 # Agent wrapper
 # ─────────────────────────────────────────────
+
 
 class PPOAgent:
     """
@@ -85,11 +97,11 @@ class PPOAgent:
         quick: bool = False,
         use_ids_obs: bool = False,
     ):
-        self.sim_records   = sim_records
-        self.predictor     = predictor
+        self.sim_records = sim_records
+        self.predictor = predictor
         self.metrics_store = metrics_store if metrics_store is not None else []
-        self.quick         = quick
-        self.use_ids_obs   = use_ids_obs
+        self.quick = quick
+        self.use_ids_obs = use_ids_obs
         self.model: PPO | None = None
         self._env: DummyVecEnv | None = None
 
@@ -109,7 +121,7 @@ class PPOAgent:
         if total_timesteps is None:
             total_timesteps = PPO_QUICK_TIMESTEPS if self.quick else PPO_TOTAL_TIMESTEPS
 
-        print(f"\n🤖 Training PPO for {total_timesteps:,} timesteps ...")
+        print(f"\n[PPO] Training PPO for {total_timesteps:,} timesteps ...")
         vec_env = self._make_env()
         self._env = vec_env
 
@@ -143,10 +155,10 @@ class PPOAgent:
 
     def load(self, path: str = PPO_MODEL_PATH) -> PPO:
         """Load a previously saved PPO model."""
-        vec_env  = self._make_env()
+        vec_env = self._make_env()
         self._env = vec_env
         self.model = PPO.load(path, env=vec_env)
-        print(f"✓ Loaded PPO model from {path}")
+        print(f"OK Loaded PPO model from {path}")
         return self.model
 
     def predict(self, obs: np.ndarray) -> np.ndarray:
@@ -174,6 +186,7 @@ class PPOAgent:
 # SAC Agent wrapper
 # ─────────────────────────────────────────────
 
+
 class SACAgent:
     """
     Wraps Stable-Baselines3 SAC for the 5G slice allocation task.
@@ -187,11 +200,11 @@ class SACAgent:
         quick: bool = False,
         use_ids_obs: bool = False,
     ):
-        self.sim_records   = sim_records
-        self.predictor     = predictor
+        self.sim_records = sim_records
+        self.predictor = predictor
         self.metrics_store = metrics_store if metrics_store is not None else []
-        self.quick         = quick
-        self.use_ids_obs   = use_ids_obs
+        self.quick = quick
+        self.use_ids_obs = use_ids_obs
         self.model: SAC | None = None
         self._env: DummyVecEnv | None = None
 
@@ -210,7 +223,7 @@ class SACAgent:
         if total_timesteps is None:
             total_timesteps = PPO_QUICK_TIMESTEPS if self.quick else PPO_TOTAL_TIMESTEPS
 
-        print(f"\n🤖 Training SAC for {total_timesteps:,} timesteps ...")
+        print(f"\n[SAC] Training SAC for {total_timesteps:,} timesteps ...")
         vec_env = self._make_env()
         self._env = vec_env
 
@@ -244,10 +257,10 @@ class SACAgent:
     def load(self, path: str = None) -> SAC:
         if path is None:
             path = PPO_MODEL_PATH.replace("ppo", "sac")
-        vec_env  = self._make_env()
+        vec_env = self._make_env()
         self._env = vec_env
         self.model = SAC.load(path, env=vec_env)
-        print(f"✓ Loaded SAC model from {path}")
+        print(f"OK Loaded SAC model from {path}")
         return self.model
 
     def predict(self, obs: np.ndarray) -> np.ndarray:
