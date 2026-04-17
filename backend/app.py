@@ -19,7 +19,15 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from flask import Flask, Response, request, jsonify
 from flask_cors import CORS
 
-from config import FLASK_HOST, FLASK_PORT, SSE_INTERVAL, REWARD_WINDOW
+# Import config with fallback values for production deployment
+try:
+    from config import FLASK_HOST, FLASK_PORT, SSE_INTERVAL, REWARD_WINDOW
+except ImportError:
+    # Fallback values if config.py is not available
+    FLASK_HOST = os.getenv("FLASK_HOST", "0.0.0.0")
+    FLASK_PORT = int(os.getenv("PORT", 5001))
+    SSE_INTERVAL = float(os.getenv("SSE_INTERVAL", 0.5))
+    REWARD_WINDOW = int(os.getenv("REWARD_WINDOW", 50))
 
 app = Flask(__name__, template_folder="templates")
 app.config["TEMPLATES_AUTO_RELOAD"] = True   # always serve fresh templates
