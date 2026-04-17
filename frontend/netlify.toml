@@ -3,7 +3,7 @@
   publish = "dist"
 
 [env]
-  VITE_BACKEND_URL = "https://5g-backend-XXXX.onrender.com"
+  VITE_BACKEND_URL = "https://fiveg-backend.onrender.com"
 
 [[redirects]]
   from = "/stream"
