@@ -2,6 +2,10 @@
 
 A dynamic, fully autonomous reinforcement learning testbed designed to intelligently allocate 5G network slice bandwidth across differing Service Level Agreement (SLA) profiles (eMBB, URLLC, mMTC) while simultaneously fending off simulated and heuristically detected network attacks.
 
+<img width="1438" height="771" alt="Screenshot 2026-04-18 at 2 16 50 AM" src="https://github.com/user-attachments/assets/0d5f0624-f1d2-4266-b112-0dea7ca5058f" />
+<img width="1440" height="781" alt="Screenshot 2026-04-18 at 2 16 59 AM" src="https://github.com/user-attachments/assets/ad24cec8-44f7-4eca-8b52-dfc0be9ea112" />
+
+
 ## Core Features
 1. **Predictive Analytics (Transformer Focus):** Utilizes an advanced NLP-inspired Self-Attention Transformer Encoder to forecast multi-step resource demands efficiently using chunked mean-pooling.
 2. **Dual Reinforcement Learning Pipelines:** Out-of-the-box support for training both Proximal Policy Optimization (**PPO**) and Soft Actor-Critic (**SAC**) algorithms. 
