@@ -36,11 +36,6 @@ build/
 *.swp
 *.swo
 
-# Large files
-model_weights.pt
-*.pt
-final_dataset.csv
-
 # OS specific
 .DS_Store
 .DS_Store?
