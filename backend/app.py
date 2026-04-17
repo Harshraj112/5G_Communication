@@ -31,7 +31,17 @@ except ImportError:
 
 app = Flask(__name__, template_folder="templates")
 app.config["TEMPLATES_AUTO_RELOAD"] = True   # always serve fresh templates
-CORS(app)
+
+# Configure CORS for both regular requests and SSE
+CORS(app, resources={
+    r"/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "OPTIONS", "HEAD"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": False,
+        "max_age": 3600
+    }
+})
 
 # ─────────────────────────────────────────────
 # Shared state (thread-safe) — use list of queues for broadcast
@@ -141,6 +151,9 @@ def stream():
             "X-Accel-Buffering": "no",
             "Connection": "keep-alive",
             "Content-Encoding": "identity",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
         },
     )
     return response

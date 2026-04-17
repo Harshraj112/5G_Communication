@@ -63,19 +63,24 @@ export default function App() {
     const determineBackendUrl = async () => {
       // Try localhost first
       try {
-        const response = await fetch('http://localhost:5001/', { signal: AbortSignal.timeout(2000) })
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 2000)
+        
+        const response = await fetch('http://localhost:5001/', { signal: controller.signal })
+        clearTimeout(timeoutId)
+        
         if (response.ok) {
           console.log('✅ Local backend detected at http://localhost:5001')
           setBackendUrl('http://localhost:5001')
           return
         }
       } catch (err) {
-        console.log('⚠️ Local backend not available, using production URL')
+        console.log('⚠️ Local backend not available:', err.message)
       }
       
       // Fallback to production URL
       const prodUrl = import.meta.env.VITE_BACKEND_URL || 'https://fiveg-backend.onrender.com'
-      console.log('Using production backend:', prodUrl)
+      console.log('🌐 Using production backend:', prodUrl)
       setBackendUrl(prodUrl)
     }
 
