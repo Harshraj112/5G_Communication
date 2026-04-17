@@ -3,722 +3,642 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>5G Network Intelligence Dashboard</title>
   <meta name="description" content="Real-time 5G network slice resource management with AI-driven bandwidth allocation, QoS monitoring, and SLA compliance tracking." />
 
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
-
-  <!-- Plotly.js -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <style>
-    /* ── Reset & Variables ───────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg-deep:    #050c1a;
-      --bg-card:    #0c1929;
-      --bg-card2:   #0f2035;
-      --border:     rgba(0, 168, 255, 0.12);
-      --accent-a:   #00a8ff;
-      --accent-b:   #7b2fff;
-      --accent-c:   #00e5b0;
-      --embb:       #00a8ff;
-      --urllc:      #ff6b6b;
-      --mmtc:       #ffd93d;
-      --good:       #00e5b0;
-      --warn:       #ffd93d;
-      --bad:        #ff6b6b;
-      --text:       #e2eaf4;
-      --text-muted: #617b96;
-      --font:       'Inter', sans-serif;
-      --mono:       'JetBrains Mono', monospace;
-      --radius:     14px;
-      --shadow:     0 8px 32px rgba(0,0,0,0.5);
+      --bg:       #03070f;
+      --card:     rgba(15, 23, 42, 0.72);
+      --card-h:   rgba(15, 23, 42, 0.95);
+      --border:   rgba(255, 255, 255, 0.08);
+      --embb:     #10b981;
+      --urllc:    #ef4444;
+      --mmtc:     #f59e0b;
+      --good:     #10b981;
+      --bad:      #ef4444;
+      --accent:   #6366f1;
+      --text:     #f1f5f9;
+      --muted:    #94a3b8;
+      --font:     'Outfit', system-ui, sans-serif;
+      --mono:     'JetBrains Mono', monospace;
+      --radius:   16px;
     }
 
     html, body {
-      background: var(--bg-deep);
+      background: var(--bg);
       color: var(--text);
       font-family: var(--font);
       min-height: 100vh;
       overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Animated background ─────────────── */
     body::before {
       content: '';
-      position: fixed;
-      inset: 0;
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
       background:
-        radial-gradient(ellipse 60% 40% at 20% 10%, rgba(0,168,255,0.07) 0%, transparent 70%),
-        radial-gradient(ellipse 50% 35% at 80% 80%, rgba(123,47,255,0.07) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
+        radial-gradient(ellipse 80% 60% at 10% 5%,  rgba(16,185,129,0.07) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 50% at 85% 85%, rgba(99,102,241,0.07) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 50% 50%, rgba(239,68,68,0.04)  0%, transparent 60%);
     }
 
-    /* ── Header ──────────────────────────── */
+    .app { position: relative; z-index: 1; }
+
+    /* ── Header ───────────────────────────────────────── */
     header {
-      position: relative;
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 20px 32px;
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 32px;
       border-bottom: 1px solid var(--border);
-      backdrop-filter: blur(12px);
-      background: rgba(5, 12, 26, 0.85);
+      backdrop-filter: blur(20px) saturate(160%);
+      background: rgba(3, 7, 15, 0.65);
     }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
+    .header-left { display: flex; align-items: center; gap: 14px; }
     .logo {
-      width: 42px;
-      height: 42px;
-      border-radius: 10px;
-      background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      box-shadow: 0 0 20px rgba(0, 168, 255, 0.35);
+      width: 44px; height: 44px; border-radius: 12px;
+      background: linear-gradient(135deg, #10b981, #6366f1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 0 24px rgba(16,185,129,0.3);
+      border: 1px solid rgba(255,255,255,0.12);
+      flex-shrink: 0;
     }
-
     header h1 {
-      font-size: 1.3rem;
-      font-weight: 700;
-      background: linear-gradient(90deg, var(--accent-a), var(--accent-c));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em;
+      background: linear-gradient(to right, #f8fafc, #94a3b8);
+      background-clip: text; /* Added standard property for compatibility */
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
-
-    header p.sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
-
+    header .sub { font-size: 0.76rem; color: var(--muted); margin-top: 2px; }
     .header-status {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.8rem;
-      color: var(--text-muted);
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 30px; padding: 6px 16px;
+      font-size: 0.82rem; color: var(--muted);
     }
-
     .live-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--good);
-      box-shadow: 0 0 8px var(--good);
-      animation: pulse 1.5s ease-in-out infinite;
+      width: 10px; height: 10px; border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
     }
-
     @keyframes pulse {
-      0%, 100% { opacity: 1;   transform: scale(1); }
-      50%       { opacity: 0.5; transform: scale(1.3); }
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.55; transform: scale(1.2); }
     }
 
-    /* ── KPI Strip ───────────────────────── */
+    /* ── KPI Strip ────────────────────────────────────── */
     .kpi-strip {
-      position: relative;
-      z-index: 5;
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 16px;
-      padding: 20px 32px;
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      gap: 18px; padding: 20px 32px;
+      animation: fadeUp 0.6s ease both;
     }
-
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
     .kpi-card {
-      background: var(--bg-card);
+      background: var(--card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 18px 22px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      transition: border-color 0.3s, transform 0.2s;
-      position: relative;
-      overflow: hidden;
+      padding: 20px 22px;
+      display: flex; flex-direction: column; gap: 8px;
+      backdrop-filter: blur(10px);
+      transition: transform 0.3s ease, border-color 0.3s, box-shadow 0.3s;
     }
-
-    .kpi-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
-      border-radius: var(--radius) var(--radius) 0 0;
+    .kpi-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(255,255,255,0.18);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.4);
     }
-
-    .kpi-card.embb::before  { background: var(--embb);  }
-    .kpi-card.urllc::before { background: var(--urllc); }
-    .kpi-card.mmtc::before  { background: var(--mmtc);  }
-    .kpi-card.reward::before{ background: linear-gradient(90deg, var(--accent-a), var(--accent-b)); }
-    .kpi-card.attack::before{ background: var(--bad); }
-
-    .kpi-card:hover { border-color: rgba(0,168,255,0.35); transform: translateY(-2px); }
-
-    .kpi-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-
+    .kpi-label {
+      font-size: 0.71rem; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.1em;
+    }
     .kpi-value {
-      font-size: 1.8rem;
-      font-weight: 700;
-      font-family: var(--mono);
-      line-height: 1;
+      font-size: 2rem; font-weight: 800;
+      font-family: var(--mono); line-height: 1.1; letter-spacing: -0.03em;
     }
-
-    .kpi-card.embb  .kpi-value { color: var(--embb);  }
-    .kpi-card.urllc .kpi-value { color: var(--urllc); }
-    .kpi-card.mmtc  .kpi-value { color: var(--mmtc);  }
-    .kpi-card.reward .kpi-value { background: linear-gradient(90deg, var(--accent-a), var(--accent-b)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-
-    .kpi-sub { font-size: 0.72rem; color: var(--text-muted); }
-
+    .kpi-sub { font-size: 0.74rem; color: var(--muted); }
     .sla-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 0.7rem;
-      padding: 3px 8px;
-      border-radius: 20px;
-      font-weight: 600;
-      width: fit-content;
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.71rem; font-weight: 600;
+      padding: 4px 10px; border-radius: 8px; width: fit-content;
+    }
+    .sla-badge.ok   { background: rgba(16,185,129,0.1); color: var(--good); border: 1px solid rgba(16,185,129,0.25); }
+    .sla-badge.fail { background: rgba(239,68,68,0.1);  color: var(--bad);  border: 1px solid rgba(239,68,68,0.25); animation: shake 0.5s linear infinite; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25%       { transform: translateX(-2px); }
+      75%       { transform: translateX(2px); }
     }
 
-    .sla-badge.ok   { background: rgba(0,229,176,0.12); color: var(--good); }
-    .sla-badge.fail { background: rgba(255,107,107,0.12); color: var(--bad); }
-
-    /* ── Main Grid ───────────────────────── */
-    .main-grid {
-      position: relative;
-      z-index: 5;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: auto auto;
-      gap: 16px;
-      padding: 0 32px;
-    }
-
+    /* ── Cards ────────────────────────────────────────── */
     .chart-card {
-      background: var(--bg-card);
+      background: var(--card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 20px;
+      padding: 20px 22px;
+      backdrop-filter: blur(10px);
       transition: border-color 0.3s;
     }
-
-    .chart-card:hover { border-color: rgba(0,168,255,0.25); }
-
+    .chart-card:hover { border-color: rgba(255,255,255,0.14); }
     .chart-card.wide  { grid-column: span 2; }
-
     .chart-title {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 4px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      font-size: 0.93rem; font-weight: 600;
+      display: flex; align-items: center; gap: 8px;
     }
+    .chart-title .icon { font-size: 1.05rem; opacity: 0.85; }
+    .chart-sub { font-size: 0.76rem; color: var(--muted); margin-top: 4px; margin-bottom: 14px; }
 
-    .chart-title .icon { font-size: 1rem; }
-    .chart-sub { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 14px; }
-
-    .chart-body { width: 100%; }
-
-    /* ── Gauges Row ──────────────────────── */
+    /* ── Layout Grids ─────────────────────────────────── */
+    .main-grid {
+      display: grid; grid-template-columns: 3fr 2fr;
+      gap: 18px; padding: 0 32px 18px;
+    }
     .gauges-row {
-      position: relative;
-      z-index: 5;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      padding: 0 32px;
-      margin-top: 0;
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 18px; padding: 0 32px 18px;
     }
-
-    /* ── Bottom: reward + SLA ────────────── */
     .bottom-row {
-      position: relative;
-      z-index: 5;
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 16px;
-      padding: 0 32px 32px;
-      margin-top: 0;
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 18px; padding: 0 32px 32px;
+      align-items: stretch;
     }
 
-    /* ── Step counter ────────────────────── */
-    .footer {
-      position: relative;
-      z-index: 5;
-      padding: 12px 32px;
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
+    /* ── Model Status Grid ────────────────────────────── */
+    #model-status {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; padding-top: 6px;
+      height: 100%;
+    }
+    .status-item {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .status-item label {
+      display: block; font-size: 0.67rem; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.07em;
+    }
+    .status-item span {
+      display: block; font-size: 0.9rem;
+      font-family: var(--mono); font-weight: 600;
+      color: var(--text); margin-top: 3px;
     }
 
-    /* ── No-signal overlay ───────────────── */
+    /* ── Overlay ──────────────────────────────────────── */
     #overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 100;
-      background: rgba(5,12,26,0.92);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      backdrop-filter: blur(8px);
-    }
-
-    #overlay.hidden { display: none; }
-
-    #overlay h2 {
-      font-size: 1.4rem;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    #overlay p {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      max-width: 400px;
+      position: fixed; inset: 0; z-index: 1000;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 18px;
+      background: rgba(3,7,15,0.95); backdrop-filter: blur(20px);
       text-align: center;
     }
-
     .spinner {
-      width: 48px; height: 48px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent-a);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+      width: 56px; height: 56px;
+      border: 4px solid rgba(255,255,255,0.06);
+      border-top-color: #10b981; border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #overlay h2 { font-size: 1.5rem; font-weight: 700; }
+    #overlay p  { font-size: 0.86rem; color: var(--muted); max-width: 380px; line-height: 1.65; }
+    #overlay code { color: #10b981; font-family: var(--mono); }
+
+    /* ── Footer ───────────────────────────────────────── */
+    .footer {
+      padding: 18px 32px;
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between;
+      font-size: 0.76rem; color: var(--muted);
     }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── Responsive ──────────────────────── */
+    /* ── Responsive ───────────────────────────────────── */
     @media (max-width: 1100px) {
-      .kpi-strip { grid-template-columns: repeat(2,1fr); }
-      .main-grid { grid-template-columns: 1fr; }
+      .kpi-strip   { grid-template-columns: repeat(2, 1fr); }
+      .main-grid   { grid-template-columns: 1fr; }
       .chart-card.wide { grid-column: span 1; }
-      .gauges-row { grid-template-columns: 1fr; }
-      .bottom-row { grid-template-columns: 1fr; }
+      .gauges-row  { grid-template-columns: 1fr; }
+      .bottom-row  { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
+  <div id="root"></div>
 
-<!-- Waiting overlay -->
-<div id="overlay">
-  <div class="spinner"></div>
-  <h2>Connecting to 5G Pipeline…</h2>
-  <p>Start the pipeline with <code style="color:var(--accent-a)">python run.py --serve</code> to see live data.</p>
-</div>
+  <script type="text/babel" data-presets="react">
+    {% raw %}
+    const { useState, useEffect, useRef, useMemo } = React;
 
-<!-- Header -->
-<header>
-  <div class="header-left">
-    <div class="logo">📡</div>
-    <div>
-      <h1>5G Network Intelligence System</h1>
-      <p class="sub">SimPy · Transformer · PPO · Real-Time QoS</p>
-    </div>
-  </div>
-  <div class="header-status">
-    <div class="live-dot" id="live-dot" style="background:var(--text-muted);box-shadow:none"></div>
-    <span id="status-txt">Waiting for data…</span>
-    <span id="step-counter" style="font-family:var(--mono)">t=—</span>
-  </div>
-</header>
+    // Constants
+    const MAX_PTS = 200;
+    const ROLL_W  = 100;  // Increased from 50 for smoother reward curves
+    const CLRS = {
+      embb:   '#10b981',
+      urllc:  '#ef4444',
+      mmtc:   '#f59e0b',
+      reward: '#818cf8',
+      muted:  '#94a3b8',
+    };
+    const BASE_LAYOUT = {
+      paper_bgcolor: 'rgba(0,0,0,0)',
+      plot_bgcolor:  'rgba(0,0,0,0)',
+      font: { family: 'Outfit, sans-serif', color: CLRS.muted, size: 11 },
+      margin: { l: 46, r: 12, t: 6, b: 40 },
+      xaxis: { gridcolor: 'rgba(255,255,255,0.05)', zerolinecolor: 'rgba(255,255,255,0.05)' },
+      yaxis: { gridcolor: 'rgba(255,255,255,0.05)', zerolinecolor: 'rgba(255,255,255,0.05)' },
+      legend: { bgcolor: 'rgba(0,0,0,0)', font: { size: 10 } },
+    };
+    const PLT_CFG = { displayModeBar: false, responsive: true };
 
-<!-- KPI Strip -->
-<div class="kpi-strip">
-  <div class="kpi-card embb">
-    <div class="kpi-label">eMBB Throughput</div>
-    <div class="kpi-value" id="kpi-embb">—</div>
-    <div class="kpi-sub">Mbps allocated</div>
-    <div class="sla-badge ok" id="sla-embb">✓ SLA OK</div>
-  </div>
-  <div class="kpi-card urllc">
-    <div class="kpi-label">URLLC Latency</div>
-    <div class="kpi-value" id="kpi-urllc">—</div>
-    <div class="kpi-sub">ms round-trip</div>
-    <div class="sla-badge ok" id="sla-urllc">✓ SLA OK</div>
-  </div>
-  <div class="kpi-card mmtc">
-    <div class="kpi-label">mMTC PDR</div>
-    <div class="kpi-value" id="kpi-mmtc">—</div>
-    <div class="kpi-sub">packet delivery ratio</div>
-    <div class="sla-badge ok" id="sla-mmtc">✓ SLA OK</div>
-  </div>
-  <div class="kpi-card reward">
-    <div class="kpi-label">Cumulative Reward</div>
-    <div class="kpi-value" id="kpi-reward">—</div>
-    <div class="kpi-sub">rolling avg (last 50 steps)</div>
-    <div class="kpi-sub" id="kpi-violations" style="color:var(--bad)"></div>
-  </div>
-  <div class="kpi-card attack" id="kpi-card-attack">
-    <div class="kpi-label">Security Status</div>
-    <div class="kpi-value" id="kpi-attack" style="font-size: 1.5rem;">SCANNING</div>
-    <div class="kpi-sub" id="kpi-attack-type">monitoring flows</div>
-    <div class="sla-badge ok" id="sla-attack">✓ SECURE</div>
-  </div>
-</div>
+    // Helpers
+    const trim = arr => arr.length > MAX_PTS ? arr.slice(-MAX_PTS) : arr;
 
-<!-- Main charts row -->
-<div class="main-grid">
-  <div class="chart-card wide">
-    <div class="chart-title"><span class="icon">📊</span> Bandwidth Allocation — Live</div>
-    <div class="chart-sub">Stacked fractions of 100 MHz total across eMBB / URLLC / mMTC slices</div>
-    <div class="chart-body" id="chart-alloc" style="height:220px"></div>
-  </div>
-  <div class="chart-card">
-    <div class="chart-title"><span class="icon">🔮</span> Forecast vs Actual Demand</div>
-    <div class="chart-sub">Transformer H=10 step ahead prediction vs ground truth</div>
-    <div class="chart-body" id="chart-forecast" style="height:240px"></div>
-  </div>
-  <div class="chart-card">
-    <div class="chart-title"><span class="icon">📈</span> Reward Curve</div>
-    <div class="chart-sub">Rolling average reward — should trend upward after training</div>
-    <div class="chart-body" id="chart-reward" style="height:240px"></div>
-  </div>
-</div>
+    const roll = (arr, w = ROLL_W) =>
+      arr.map((_, i) => {
+        const s = arr.slice(Math.max(0, i - w + 1), i + 1);
+        return s.reduce((a, b) => a + b, 0) / s.length;
+      });
 
-<!-- Gauges row -->
-<div class="gauges-row" style="margin-top:16px">
-  <div class="chart-card">
-    <div class="chart-title"><span class="icon">📶</span> eMBB QoS Gauge</div>
-    <div class="chart-body" id="gauge-embb" style="height:200px"></div>
-  </div>
-  <div class="chart-card">
-    <div class="chart-title"><span class="icon">⚡</span> URLLC Latency Gauge</div>
-    <div class="chart-body" id="gauge-urllc" style="height:200px"></div>
-  </div>
-  <div class="chart-card">
-    <div class="chart-title"><span class="icon">🌐</span> mMTC PDR Gauge</div>
-    <div class="chart-body" id="gauge-mmtc" style="height:200px"></div>
-  </div>
-</div>
+    const extractQos = d => {
+      if (!d) return [0, 0, 0];
+      if (Array.isArray(d.qos))
+        return [d.qos[0] ?? 0, d.qos[1] ?? 0, d.qos[2] ?? 0];
+      const q = d.qos ?? {};
+      return [q.eMBB_throughput_Mbps ?? 0, q.URLLC_latency_ms ?? 0, q.mMTC_PDR ?? 0];
+    };
 
-<!-- Bottom row: reward history + SLA bar -->
-<div class="bottom-row" style="margin-top:16px">
-  <div class="chart-card">
-    <div class="chart-title"><span class="icon">📉</span> SLA Violation Rate</div>
-    <div class="chart-sub">Violations per timestep (lower is better)</div>
-    <div class="chart-body" id="chart-sla" style="height:200px"></div>
-  </div>
-  <div class="chart-card">
-    <div class="chart-title"><span class="icon">🧠</span> Model Status</div>
-    <div class="chart-sub">Live pipeline metadata</div>
-    <div id="model-status" style="font-family:var(--mono);font-size:0.75rem;color:var(--text-muted);line-height:2;padding-top:8px"></div>
-  </div>
-</div>
+    const fmt = (v, n) => (v !== undefined && v !== null) ? Number(v).toFixed(n) : '—';
 
-<!-- Footer -->
-<div class="footer">
-  <span>5G Network Intelligence System · SimPy + PyTorch + PPO + Flask</span>
-  <span id="footer-ts">—</span>
-</div>
+    // PlotlyChart
+    function PlotlyChart({ traces, layout, height = 230 }) {
+      const ref = useRef(null);
+      useEffect(() => {
+        if (!ref.current || !traces?.length) return;
+        Plotly.react(ref.current, traces, { ...BASE_LAYOUT, ...layout }, PLT_CFG);
+      }, [traces, layout]);
+      return <div ref={ref} style={{ width: '100%', height }} />;
+    }
 
-<script>
-  // ─────────────────────────────────────────
-  // State
-  // ─────────────────────────────────────────
-  const MAX_POINTS = 200;
-  const CHART_BG   = 'rgba(0,0,0,0)';
-  const PAPER_BG   = 'rgba(0,0,0,0)';
-  const FONT_COLOR = '#617b96';
-  const GRID_COLOR = 'rgba(0,168,255,0.06)';
+    // Gauge
+    function Gauge({ value, min, max, color, unit, invertColors }) {
+      const ref   = useRef(null);
+      const ready = useRef(false);
 
-  let ts_arr       = [];
-  let alloc_embb   = [], alloc_urllc  = [], alloc_mmtc  = [];
-  let reward_arr   = [];
-  let sla_arr      = [];
-  let actual_embb  = [], actual_urllc = [], actual_mmtc = [];
-  let forecast_t   = [], fc_embb = [], fc_urllc = [], fc_mmtc = [];
-  let totalReward  = 0;
-  let stepCount    = 0;
-  let initialized  = false;
+      const buildTrace = v => [{
+        type: 'indicator', mode: 'gauge+number',
+        value: v ?? 0,
+        number: { suffix: unit ? ` ${unit}` : '', font: { size: 28, color } },
+        gauge: {
+          axis: { range: [min, max], tickfont: { size: 9, color: CLRS.muted } },
+          bar:  { color, thickness: 0.28 },
+          bgcolor: 'rgba(0,0,0,0)', borderwidth: 0,
+          steps: (() => {
+            const r = max - min;
+            const [c0, c1, c2] = invertColors
+              ? ['rgba(16,185,129,0.14)', 'rgba(245,158,11,0.14)', 'rgba(239,68,68,0.14)']
+              : ['rgba(239,68,68,0.10)', 'rgba(245,158,11,0.10)', 'rgba(16,185,129,0.18)'];
+            return [
+              { range: [min,        min + r*0.33], color: c0 },
+              { range: [min + r*0.33, min + r*0.66], color: c1 },
+              { range: [min + r*0.66, max],         color: c2 },
+            ];
+          })(),
+        },
+        title: { text: '' },
+      }];
 
-  // ─────────────────────────────────────────
-  // Plotly layout helpers
-  // ─────────────────────────────────────────
-  const baseLayout = (extra = {}) => ({
-    paper_bgcolor: PAPER_BG,
-    plot_bgcolor:  CHART_BG,
-    font:  { family: 'Inter, sans-serif', color: FONT_COLOR, size: 11 },
-    margin: { l: 42, r: 16, t: 8, b: 36 },
-    xaxis: { gridcolor: GRID_COLOR, zerolinecolor: GRID_COLOR, tickfont: { size: 10 } },
-    yaxis: { gridcolor: GRID_COLOR, zerolinecolor: GRID_COLOR, tickfont: { size: 10 } },
-    legend: { bgcolor: 'rgba(0,0,0,0)', font: { size: 10 } },
-    ...extra,
-  });
+      const gLayout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: CLRS.muted },
+        margin: { l: 18, r: 18, t: 18, b: 8 },
+      };
 
-  const config = { displayModeBar: false, responsive: true };
+      useEffect(() => {
+        if (!ref.current) return;
+        const v = value ?? 0;
+        if (!ready.current) {
+          Plotly.newPlot(ref.current, buildTrace(v), gLayout, PLT_CFG);
+          ready.current = true;
+        } else {
+          Plotly.restyle(ref.current, { value: [v] });
+        }
+      }, [value]); // eslint-disable-line
 
-  // ─────────────────────────────────────────
-  // Initialize charts (empty)
-  // ─────────────────────────────────────────
-  function initCharts() {
-    // Allocation stacked area
-    Plotly.newPlot('chart-alloc', [
-      { x: [], y: [], name: 'eMBB',  type: 'scatter', mode: 'none', stackgroup: 'one', fillcolor: 'rgba(0,168,255,0.55)', line: { color: '#00a8ff' } },
-      { x: [], y: [], name: 'URLLC', type: 'scatter', mode: 'none', stackgroup: 'one', fillcolor: 'rgba(255,107,107,0.55)', line: { color: '#ff6b6b' } },
-      { x: [], y: [], name: 'mMTC',  type: 'scatter', mode: 'none', stackgroup: 'one', fillcolor: 'rgba(255,217,61,0.45)', line: { color: '#ffd93d' } },
-    ], baseLayout({ yaxis: { title: 'Fraction', range: [0, 1] } }), config);
+      return <div ref={ref} style={{ width: '100%', height: 190 }} />;
+    }
 
-    // Forecast vs Actual
-    Plotly.newPlot('chart-forecast', [
-      { x: [], y: [], name: 'eMBB actual',    mode: 'lines', line: { color: '#00a8ff', width: 2 } },
-      { x: [], y: [], name: 'eMBB forecast',  mode: 'lines', line: { color: '#00a8ff', width: 1.5, dash: 'dot' } },
-      { x: [], y: [], name: 'URLLC actual',   mode: 'lines', line: { color: '#ff6b6b', width: 2 } },
-      { x: [], y: [], name: 'URLLC forecast', mode: 'lines', line: { color: '#ff6b6b', width: 1.5, dash: 'dot' } },
-      { x: [], y: [], name: 'mMTC actual',    mode: 'lines', line: { color: '#ffd93d', width: 2 } },
-      { x: [], y: [], name: 'mMTC forecast',  mode: 'lines', line: { color: '#ffd93d', width: 1.5, dash: 'dot' } },
-    ], baseLayout({ yaxis: { title: 'Demand' }, legend: { orientation: 'h', y: -0.25 } }), config);
+    // KPICard
+    function KPICard({ label, value, sub, color, slaOk, badgeLabel }) {
+      return (
+        <div className="kpi-card">
+          <div className="kpi-label">{label}</div>
+          <div className="kpi-value" style={{ color }}>{value ?? '—'}</div>
+          <div className="kpi-sub">{sub}</div>
+          {slaOk !== undefined && (
+            <span className={`sla-badge ${slaOk ? 'ok' : 'fail'}`}>
+              {slaOk ? '✓' : '✗'} {badgeLabel ?? (slaOk ? 'SLA OK' : 'SLA FAIL')}
+            </span>
+          )}
+        </div>
+      );
+    }
 
-    // Reward curve
-    Plotly.newPlot('chart-reward', [
-      { x: [], y: [], name: 'Raw reward',  mode: 'lines', line: { color: 'rgba(123,47,255,0.4)', width: 1 } },
-      { x: [], y: [], name: 'Rolling avg', mode: 'lines', line: { color: '#7b2fff', width: 2.5 } },
-    ], baseLayout({ yaxis: { title: 'Reward' } }), config);
+    // StatusItem
+    function StatusItem({ label, value }) {
+      return (
+        <div className="status-item">
+          <label>{label}</label>
+          <span>{value ?? '—'}</span>
+        </div>
+      );
+    }
 
-    // SLA violations
-    Plotly.newPlot('chart-sla', [
-      { x: [], y: [], name: 'Violations', type: 'bar',
-        marker: { color: 'rgba(255,107,107,0.6)', line: { color: '#ff6b6b', width: 1 } } },
-    ], baseLayout({ yaxis: { title: 'Violations / step', range: [0, 3] } }), config);
+    // Overlay
+    function Overlay() {
+      return (
+        <div id="overlay">
+          <div className="spinner" />
+          <h2>Connecting to 5G Pipeline…</h2>
+          <p>
+            Waiting for live data. Make sure <code>python run.py --serve</code> is running,
+            then refresh this page.
+          </p>
+        </div>
+      );
+    }
 
-    // Gauges
-    initGauge('gauge-embb',  'eMBB Throughput', 0, 200,  '#00a8ff', 'Mbps');
-    initGauge('gauge-urllc', 'URLLC Latency',   0, 5,    '#ff6b6b', 'ms',   true);
-    initGauge('gauge-mmtc',  'mMTC PDR',        0, 1,    '#ffd93d', '');
+    // Main App
+    function App() {
+      const [frame,  setFrame]  = useState(null);
+      const [conn,   setConn]   = useState(false);
+      const [clock,  setClock]  = useState('—');
+      const [hist,   setHist]   = useState({
+        t:  [], aE: [], aU: [], aM: [],
+        rw: [], sla:[],
+        dE: [], dU: [], dM: [],
+        fT: [], fE: [], fU: [], fM: [],
+        qE: [], qU: [], qM: [],
+      });
 
-    initialized = true;
-  }
+      // SSE connection with auto-reconnect
+      useEffect(() => {
+        let es;
+        function connect() {
+          es = new EventSource('/stream');
+          es.onmessage = ev => {
+            try {
+              const d = JSON.parse(ev.data);
+              setConn(true);
+              setFrame(d);
+              setClock(new Date().toLocaleTimeString());
+              setHist(p => {
+                const qos = extractQos(d);
+                const fc  = d.forecast;
+                const hasFC = Array.isArray(fc) && fc.length > 0;
+                const avgFC = hasFC
+                  ? fc.reduce((acc, r) => [acc[0]+r[0], acc[1]+r[1], acc[2]+r[2]], [0,0,0])
+                      .map(v => v / fc.length)
+                  : null;
+                return {
+                  t:  trim([...p.t,  d.t  ?? 0]),
+                  aE: trim([...p.aE, d.alloc?.eMBB  ?? 0.5]),
+                  aU: trim([...p.aU, d.alloc?.URLLC ?? 0.3]),
+                  aM: trim([...p.aM, d.alloc?.mMTC  ?? 0.2]),
+                  rw: trim([...p.rw, d.reward ?? 0]),
+                  sla:trim([...p.sla,d.sla_violations ?? 0]),
+                  dE: trim([...p.dE, d.demand?.eMBB  ?? 0]),
+                  dU: trim([...p.dU, d.demand?.URLLC ?? 0]),
+                  dM: trim([...p.dM, d.demand?.mMTC  ?? 0]),
+                  fT: hasFC ? trim([...p.fT, d.t ?? 0]) : p.fT,
+                  fE: hasFC ? trim([...p.fE, avgFC[0]]) : p.fE,
+                  fU: hasFC ? trim([...p.fU, avgFC[1]]) : p.fU,
+                  fM: hasFC ? trim([...p.fM, avgFC[2]]) : p.fM,
+                  qE: trim([...p.qE, qos[0]]),
+                  qU: trim([...p.qU, qos[1]]),
+                  qM: trim([...p.qM, qos[2]]),
+                };
+              });
+            } catch { /* ignore parse errors */ }
+          };
+          es.onerror = () => {
+            setConn(false);
+            es.close();
+            setTimeout(connect, 3000);
+          };
+        }
+        connect();
+        return () => es?.close();
+      }, []);
 
-  function initGauge(id, title, lo, hi, color, unit, invertColors = false) {
-    Plotly.newPlot(id, [{
-      type: 'indicator', mode: 'gauge+number',
-      value: 0,
-      number: { suffix: unit ? ' ' + unit : '', font: { size: 22, color: color } },
-      gauge: {
-        axis: { range: [lo, hi], tickcolor: FONT_COLOR, tickfont: { color: FONT_COLOR, size: 9 } },
-        bar:  { color: color, thickness: 0.25 },
-        bgcolor: 'rgba(0,0,0,0)',
-        borderwidth: 0,
-        steps: invertColors
-          ? [ { range: [lo, (hi-lo)*0.33+lo], color: 'rgba(0,229,176,0.08)' },
-              { range: [(hi-lo)*0.33+lo, (hi-lo)*0.66+lo], color: 'rgba(255,217,61,0.08)' },
-              { range: [(hi-lo)*0.66+lo, hi], color: 'rgba(255,107,107,0.08)' } ]
-          : [ { range: [lo, (hi-lo)*0.33+lo], color: 'rgba(255,107,107,0.08)' },
-              { range: [(hi-lo)*0.33+lo, (hi-lo)*0.66+lo], color: 'rgba(255,217,61,0.08)' },
-              { range: [(hi-lo)*0.66+lo, hi], color: 'rgba(0,229,176,0.08)' } ],
-      },
-      title: { text: '', font: { size:12 } },
-    }], {
-      paper_bgcolor: PAPER_BG,
-      font: { family: 'Inter', color: FONT_COLOR },
-      margin: { l: 20, r: 20, t: 20, b: 20 },
-    }, config);
-  }
-
-  // ─────────────────────────────────────────
-  // Rolling average
-  // ─────────────────────────────────────────
-  function rollingAvg(arr, w = 50) {
-    return arr.map((_, i) => {
-      const slice = arr.slice(Math.max(0, i - w + 1), i + 1);
-      return slice.reduce((a, b) => a + b, 0) / slice.length;
-    });
-  }
-
-  // ─────────────────────────────────────────
-  // Update charts from new frame
-  // ─────────────────────────────────────────
-  function updateCharts(d) {
-    const t = d.t ?? stepCount;
-    stepCount++;
-    totalReward += d.reward ?? 0;
-
-    // Trim to MAX_POINTS
-    const trim = arr => arr.length > MAX_POINTS ? arr.slice(-MAX_POINTS) : arr;
-
-    ts_arr      = trim([...ts_arr, t]);
-    alloc_embb  = trim([...alloc_embb,  d.alloc?.eMBB  ?? 0.5]);
-    alloc_urllc = trim([...alloc_urllc, d.alloc?.URLLC ?? 0.3]);
-    alloc_mmtc  = trim([...alloc_mmtc,  d.alloc?.mMTC  ?? 0.2]);
-    reward_arr  = trim([...reward_arr,  d.reward ?? 0]);
-    sla_arr     = trim([...sla_arr,     d.sla_violations ?? 0]);
-    actual_embb  = trim([...actual_embb,  d.demand?.eMBB  ?? 0]);
-    actual_urllc = trim([...actual_urllc, d.demand?.URLLC ?? 0]);
-    actual_mmtc  = trim([...actual_mmtc,  d.demand?.mMTC  ?? 0]);
-
-    // Forecast (average across H steps)
-    const fc = d.forecast ?? null;
-    if (fc && fc.length > 0) {
-      forecast_t  = trim([...forecast_t, t]);
-      const avg_fc = [0, 0, 0];
-      for (let i = 0; i < fc.length; i++) {
-        avg_fc[0] += fc[i][0] || 0;
-        avg_fc[1] += fc[i][1] || 0;
-        avg_fc[2] += fc[i][2] || 0;
-      }
-      avg_fc[0] /= fc.length;
-      avg_fc[1] /= fc.length;
-      avg_fc[2] /= fc.length;
+      // Derived values
+      const qos     = useMemo(() => extractQos(frame), [frame]);
+      const sla     = frame?.sla_ok ?? [true, true, true];
+      const avg     = useMemo(() => roll(hist.rw), [hist.rw]);
+      const avgLast = avg.length ? avg[avg.length - 1] : 0;
+      const isAtk   = frame?.label === 'Attack';
       
-      fc_embb     = trim([...fc_embb,  avg_fc[0]]);
-      fc_urllc    = trim([...fc_urllc, avg_fc[1]]);
-      fc_mmtc     = trim([...fc_mmtc,  avg_fc[2]]);
+      // Ensure consistent gauge values (round to 3 decimal places for URLLC latency)
+      const gaugeValues = useMemo(() => ({
+        embb: qos[0],
+        urllc: Math.round(qos[1] * 1000) / 1000,  // Consistent precision
+        mmtc: qos[2],
+      }), [qos]);
+
+      // ── Chart Traces (memoised) ────────────────────────────
+      const allocTr = useMemo(() => [
+        { x: hist.t, y: hist.aE, name: 'eMBB',  type: 'scatter', mode: 'none', stackgroup: 'one', fillcolor: 'rgba(16,185,129,0.52)' },
+        { x: hist.t, y: hist.aU, name: 'URLLC', type: 'scatter', mode: 'none', stackgroup: 'one', fillcolor: 'rgba(239,68,68,0.52)'   },
+        { x: hist.t, y: hist.aM, name: 'mMTC',  type: 'scatter', mode: 'none', stackgroup: 'one', fillcolor: 'rgba(245,158,11,0.45)'  },
+      ], [hist.t, hist.aE, hist.aU, hist.aM]);
+
+      const fcTr = useMemo(() => [
+        { x: hist.t,  y: hist.dE, name: 'eMBB actual',     mode: 'lines', line: { color: CLRS.embb,  width: 2 } },
+        { x: hist.fT, y: hist.fE, name: 'eMBB forecast',   mode: 'lines', line: { color: CLRS.embb,  width: 1.5, dash: 'dot' } },
+        { x: hist.t,  y: hist.dU, name: 'URLLC actual',    mode: 'lines', line: { color: CLRS.urllc, width: 2 } },
+        { x: hist.fT, y: hist.fU, name: 'URLLC forecast',  mode: 'lines', line: { color: CLRS.urllc, width: 1.5, dash: 'dot' } },
+        { x: hist.t,  y: hist.dM, name: 'mMTC actual',     mode: 'lines', line: { color: CLRS.mmtc,  width: 2 } },
+        { x: hist.fT, y: hist.fM, name: 'mMTC forecast',   mode: 'lines', line: { color: CLRS.mmtc,  width: 1.5, dash: 'dot' } },
+      ], [hist.t, hist.fT, hist.dE, hist.dU, hist.dM, hist.fE, hist.fU, hist.fM]);
+
+      const rwTr = useMemo(() => [
+        { x: hist.t, y: hist.rw, name: 'Raw',         mode: 'lines', line: { color: 'rgba(129,140,248,0.3)', width: 1 } },
+        { x: hist.t, y: avg,     name: 'Rolling avg',  mode: 'lines', line: { color: CLRS.reward, width: 2.5 } },
+      ], [hist.t, hist.rw, avg]);
+
+      const slaTr = useMemo(() => [
+        { x: hist.t, y: hist.sla, name: 'Violations', type: 'bar',
+          marker: { color: 'rgba(239,68,68,0.58)', line: { color: '#ef4444', width: 1 } } },
+      ], [hist.t, hist.sla]);
+
+      // ── Render ─────────────────────────────────────────────
+      return (
+        <div className="app">
+          {!frame && <Overlay />}
+
+          {/* ── Header ── */}
+          <header>
+            <div className="header-left">
+              <div className="logo">📡</div>
+              <div>
+                <h1>5G Network Intelligence System</h1>
+                <p className="sub">SimPy · Transformer · PPO · Real-Time QoS</p>
+              </div>
+            </div>
+            <div className="header-status">
+              <div
+                className="live-dot"
+                style={{
+                  background:  conn ? '#10b981' : '#ef4444',
+                  boxShadow: `0 0 10px ${conn ? '#10b981' : '#ef4444'}`,
+                }}
+              />
+              <span style={{ fontWeight: 600, color: conn ? '#10b981' : '#ef4444' }}>
+                {conn ? 'LIVE' : 'RECONNECTING'}
+              </span>
+              <span style={{ fontFamily: 'var(--mono)', color: 'var(--text)' }}>
+                t={frame?.t ?? '—'}
+              </span>
+            </div>
+          </header>
+
+          {/* ── KPI Strip ── */}
+          <div className="kpi-strip">
+            <KPICard
+              label="eMBB Throughput"
+              value={fmt(qos[0], 1)}
+              sub="Mbps allocated"
+              color="var(--embb)"
+              slaOk={sla[0]}
+            />
+            <KPICard
+              label="URLLC Latency"
+              value={fmt(qos[1], 3)}
+              sub="ms round-trip"
+              color="var(--urllc)"
+              slaOk={sla[1]}
+            />
+            <KPICard
+              label="mMTC PDR"
+              value={fmt(qos[2], 3)}
+              sub="packet delivery ratio"
+              color="var(--mmtc)"
+              slaOk={sla[2]}
+            />
+            <KPICard
+              label="Cumulative Reward"
+              value={fmt(avgLast, 3)}
+              sub="rolling avg (last 100 steps)"
+              color="var(--accent)"
+              slaOk={undefined}
+            />
+            <KPICard
+              label="Security Status"
+              value={isAtk ? 'ATTACK' : 'CLEAN'}
+              sub={frame?.attack_type || 'Monitoring flows'}
+              color={isAtk ? 'var(--bad)' : 'var(--good)'}
+              slaOk={!isAtk}
+              badgeLabel={isAtk ? 'THREAT DETECTED' : 'SECURE'}
+            />
+          </div>
+
+          {/* ── Main charts ── */}
+          <div className="main-grid">
+            <div className="chart-card wide">
+              <div className="chart-title"><span className="icon">📊</span> Bandwidth Allocation — Live</div>
+              <div className="chart-sub">Stacked fractions of 100 MHz total across eMBB / URLLC / mMTC slices</div>
+              <PlotlyChart
+                traces={allocTr}
+                layout={{ yaxis: { title: 'Fraction', range: [0, 1] } }}
+                height={200}
+              />
+            </div>
+            <div className="chart-card">
+              <div className="chart-title"><span className="icon">🔮</span> Forecast vs Actual Demand</div>
+              <div className="chart-sub">Transformer H=10 step ahead prediction vs ground truth</div>
+              <PlotlyChart
+                traces={fcTr}
+                layout={{ yaxis: { title: 'Demand (Mbps)' }, legend: { orientation: 'h', y: -0.3 } }}
+                height={245}
+              />
+            </div>
+            <div className="chart-card">
+              <div className="chart-title"><span className="icon">📈</span> Reward Curve</div>
+              <div className="chart-sub">Rolling reward — should be positive once all SLAs are met</div>
+              <PlotlyChart
+                traces={rwTr}
+                layout={{ yaxis: { title: 'Reward' } }}
+                height={245}
+              />
+            </div>
+          </div>
+
+          {/* ── Gauges ── */}
+          <div className="gauges-row">
+            <div className="chart-card">
+              <div className="chart-title"><span className="icon">📶</span> eMBB QoS Gauge</div>
+              <Gauge value={gaugeValues.embb} min={0} max={600} color={CLRS.embb}  unit="Mbps" invertColors={false} />
+            </div>
+            <div className="chart-card">
+              <div className="chart-title"><span className="icon">⚡</span> URLLC Latency Gauge</div>
+              <Gauge value={gaugeValues.urllc} min={0} max={10}  color={CLRS.urllc} unit="ms"   invertColors={true}  />
+            </div>
+            <div className="chart-card">
+              <div className="chart-title"><span className="icon">🌐</span> mMTC PDR Gauge</div>
+              <Gauge value={gaugeValues.mmtc} min={0} max={1}   color={CLRS.mmtc}  unit=""     invertColors={false} />
+            </div>
+          </div>
+
+          {/* ── Bottom row ── */}
+          <div className="bottom-row">
+            <div className="chart-card">
+              <div className="chart-title"><span className="icon">📉</span> SLA Violation Rate</div>
+              <div className="chart-sub">Per-timestep violations (aim for 0)</div>
+              <PlotlyChart
+                traces={slaTr}
+                layout={{ yaxis: { title: 'Violations / step', range: [0, 3] } }}
+                height={200}
+              />
+            </div>
+            <div className="chart-card">
+              <div className="chart-title"><span className="icon">🧠</span> Model Status</div>
+              <div className="chart-sub">Live pipeline metrics & allocations</div>
+              <div id="model-status">
+                <StatusItem label="Step"       value={frame?.t} />
+                <StatusItem label="Reward"     value={frame?.reward != null ? fmt(frame.reward, 4) : null} />
+                <StatusItem label="eMBB Alloc" value={frame?.alloc?.eMBB  != null ? `${(frame.alloc.eMBB  * 100).toFixed(1)}%` : null} />
+                <StatusItem label="URLLC Alloc"value={frame?.alloc?.URLLC != null ? `${(frame.alloc.URLLC * 100).toFixed(1)}%` : null} />
+                <StatusItem label="mMTC Alloc" value={frame?.alloc?.mMTC  != null ? `${(frame.alloc.mMTC  * 100).toFixed(1)}%` : null} />
+                <StatusItem label="SLA Status" value={frame?.sla_violations != null ? `${frame.sla_violations}/3 violations` : null} />
+              </div>
+            </div>
+          </div>
+
+          {/* ── Footer ── */}
+          <div className="footer">
+            <span>5G Intelligence System · SimPy + PyTorch Transformer + PPO Agent + Flask SSE</span>
+            <span>{clock}</span>
+          </div>
+        </div>
+      );
     }
 
-    const avg = rollingAvg(reward_arr, 50);
-
-    // ── Allocation chart ──────────────────
-    Plotly.react('chart-alloc', [
-      { x: ts_arr, y: alloc_embb,  name: 'eMBB',  type: 'scatter', mode: 'none', stackgroup: 'one', fillcolor: 'rgba(0,168,255,0.55)' },
-      { x: ts_arr, y: alloc_urllc, name: 'URLLC', type: 'scatter', mode: 'none', stackgroup: 'one', fillcolor: 'rgba(255,107,107,0.55)' },
-      { x: ts_arr, y: alloc_mmtc,  name: 'mMTC',  type: 'scatter', mode: 'none', stackgroup: 'one', fillcolor: 'rgba(255,217,61,0.45)' },
-    ], baseLayout({ yaxis: { title: 'Fraction', range: [0, 1] } }), config);
-
-    // ── Forecast chart ────────────────────
-    Plotly.react('chart-forecast', [
-      { x: ts_arr,     y: actual_embb,  name: 'eMBB actual',    mode: 'lines', line: { color: '#00a8ff', width: 2 } },
-      { x: forecast_t, y: fc_embb,      name: 'eMBB forecast',  mode: 'lines', line: { color: '#00a8ff', width: 1.5, dash: 'dot' } },
-      { x: ts_arr,     y: actual_urllc, name: 'URLLC actual',   mode: 'lines', line: { color: '#ff6b6b', width: 2 } },
-      { x: forecast_t, y: fc_urllc,     name: 'URLLC forecast', mode: 'lines', line: { color: '#ff6b6b', width: 1.5, dash: 'dot' } },
-      { x: ts_arr,     y: actual_mmtc,  name: 'mMTC actual',    mode: 'lines', line: { color: '#ffd93d', width: 2 } },
-      { x: forecast_t, y: fc_mmtc,      name: 'mMTC forecast',  mode: 'lines', line: { color: '#ffd93d', width: 1.5, dash: 'dot' } },
-    ], baseLayout({ yaxis: { title: 'Demand' }, legend: { orientation: 'h', y: -0.25 } }), config);
-
-    // ── Reward chart ──────────────────────
-    Plotly.react('chart-reward', [
-      { x: ts_arr, y: reward_arr, name: 'Raw reward',  mode: 'lines', line: { color: 'rgba(123,47,255,0.35)', width: 1 } },
-      { x: ts_arr, y: avg,        name: 'Rolling avg', mode: 'lines', line: { color: '#7b2fff', width: 2.5 } },
-    ], baseLayout({ yaxis: { title: 'Reward' } }), config);
-
-    // ── SLA chart ─────────────────────────
-    Plotly.react('chart-sla', [
-      { x: ts_arr, y: sla_arr, name: 'Violations', type: 'bar',
-        marker: { color: 'rgba(255,107,107,0.6)', line: { color: '#ff6b6b', width: 1 } } },
-    ], baseLayout({ yaxis: { title: 'Violations / step', range: [0, 3] } }), config);
-
-    // ── Gauges ────────────────────────────
-    const qos = d.qos ?? {};
-    const embbTput  = qos.eMBB_throughput_Mbps ?? 0;
-    const urllcLat  = qos.URLLC_latency_ms     ?? 0;
-    const mmtcPDR   = qos.mMTC_PDR             ?? 0;
-
-    Plotly.restyle('gauge-embb',  { value: embbTput });
-    Plotly.restyle('gauge-urllc', { value: urllcLat });
-    Plotly.restyle('gauge-mmtc',  { value: mmtcPDR  });
-
-    // ── KPI strip ─────────────────────────
-    document.getElementById('kpi-embb').textContent   = embbTput.toFixed(1);
-    document.getElementById('kpi-urllc').textContent  = urllcLat.toFixed(3);
-    document.getElementById('kpi-mmtc').textContent   = mmtcPDR.toFixed(3);
-    document.getElementById('kpi-reward').textContent = avg[avg.length-1]?.toFixed(3) ?? '—';
-
-    const sla = d.sla_ok ?? [true, true, true];
-    updateSLABadge('sla-embb',  sla[0]);
-    updateSLABadge('sla-urllc', sla[1]);
-    updateSLABadge('sla-mmtc',  sla[2]);
-
-    const nViol = d.sla_violations ?? 0;
-    document.getElementById('kpi-violations').textContent = nViol > 0 ? `⚠ ${nViol} violation(s)` : '';
-
-    // ── Attack status ─────────────────────
-    const is_attack = d.label || "Benign";
-    const attack_type = d.attack_type || "None";
-    const atkCard = document.getElementById('kpi-card-attack');
-    const atkVal = document.getElementById('kpi-attack');
-    const atkSub = document.getElementById('kpi-attack-type');
-    if (is_attack === "Attack") {
-        atkCard.style.borderColor = 'rgba(255,107,107,0.8)';
-        atkVal.textContent = is_attack.toUpperCase();
-        atkVal.style.color = 'var(--bad)';
-        atkSub.textContent = attack_type;
-        updateSLABadge('sla-attack', false);
-        document.getElementById('sla-attack').textContent = '✗ THREAT DETECTED';
-    } else {
-        atkCard.style.borderColor = 'var(--border)';
-        atkVal.textContent = 'CLEAN';
-        atkVal.style.color = 'var(--good)';
-        atkSub.textContent = 'Monitoring flows';
-        updateSLABadge('sla-attack', true);
-        document.getElementById('sla-attack').textContent = '✓ SECURE';
-    }
-
-    // ── Model status ──────────────────────
-    const ms = document.getElementById('model-status');
-    ms.innerHTML = `
-      <span style="color:var(--text)">Step</span>  ${t}<br>
-      <span style="color:var(--text)">Reward</span> ${(d.reward??0).toFixed(4)}<br>
-      <span style="color:var(--text)">eMBB alloc</span>  ${((d.alloc?.eMBB??0)*100).toFixed(1)}%<br>
-      <span style="color:var(--text)">URLLC alloc</span> ${((d.alloc?.URLLC??0)*100).toFixed(1)}%<br>
-      <span style="color:var(--text)">mMTC alloc</span>  ${((d.alloc?.mMTC??0)*100).toFixed(1)}%<br>
-      <span style="color:var(--text)">Violations</span>  ${nViol}/3<br>
-      <span style="color:var(--text)">Total steps</span> ${stepCount}
-    `;
-
-    // Header
-    document.getElementById('step-counter').textContent = `t=${t}`;
-    document.getElementById('footer-ts').textContent    = new Date().toLocaleTimeString();
-  }
-
-  function updateSLABadge(id, ok) {
-    const el = document.getElementById(id);
-    el.textContent = ok ? '✓ SLA OK' : '✗ SLA FAIL';
-    el.className   = 'sla-badge ' + (ok ? 'ok' : 'fail');
-  }
-
-  // ─────────────────────────────────────────
-  // SSE Connection
-  // ─────────────────────────────────────────
-  function connectSSE() {
-    if (!initialized) initCharts();
-
-    const evtSource = new EventSource('/stream');
-    const overlay   = document.getElementById('overlay');
-    const dot       = document.getElementById('live-dot');
-    const statusTxt = document.getElementById('status-txt');
-
-    evtSource.onopen = () => {
-      console.log('SSE connected');
-    };
-
-    evtSource.onmessage = (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        overlay.classList.add('hidden');
-        dot.style.background   = 'var(--good)';
-        dot.style.boxShadow    = '0 0 8px var(--good)';
-        statusTxt.textContent  = 'LIVE';
-        updateCharts(data);
-      } catch (err) {
-        console.warn('Parse error:', err);
-      }
-    };
-
-    evtSource.onerror = () => {
-      dot.style.background  = 'var(--bad)';
-      dot.style.boxShadow   = '0 0 8px var(--bad)';
-      statusTxt.textContent = 'Reconnecting…';
-      evtSource.close();
-      setTimeout(connectSSE, 3000);
-    };
-  }
-
-  // Start
-  initCharts();
-  connectSSE();
-</script>
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    {% endraw %}
+  </script>
 </body>
 </html>

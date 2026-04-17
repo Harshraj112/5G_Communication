@@ -101,6 +101,7 @@ def phase_train_rl(
             device="cpu",
             window_t=WINDOW_T,
             horizon_h=HORIZON_H,
+            d_model=D_MODEL,
         )
         scaler = SliceDataset.load_scaler(SCALER_PATH)
 
@@ -223,11 +224,14 @@ def phase_serve(
     # ── Live pipeline loop ────────────────────
     print("\n[RUN] Pipeline running. Press Ctrl+C to stop.\n")
     if use_dataset and sim_records is not None:
-        streaming_sim = sim_records  # Use loaded list as iterator target
+        streaming_sim = sim_records          # Use loaded list as source
         sim_idx = 0
     else:
-        streaming_sim = StreamingTrafficSimulator(num_ues=NUM_UES, seed=99)
-        sim_idx = None
+        # Use fast_simulate for consistent data distribution with training
+        from predictor.trainer import fast_simulate as _fast_sim
+        print("\n[SIM] Pre-generating serve-phase simulation records ...")
+        streaming_sim = _fast_sim(2000, num_ues=NUM_UES, seed=99)
+        sim_idx = 0
     fiveg = FiveGEnvironment()
 
     reward_history: list[float] = []
@@ -249,11 +253,9 @@ def phase_serve(
     try:
         while True:
             # Step 1: Get demand from stream or dataset
-            if sim_idx is not None:
-                record = streaming_sim[sim_idx % len(streaming_sim)]
-                sim_idx += 1
-            else:
-                record = streaming_sim.step()
+            record = dict(streaming_sim[sim_idx % len(streaming_sim)])
+            record["t"] = step       # Overwrite with real step counter
+            sim_idx += 1
 
             demand = {
                 "eMBB": record["eMBB"],

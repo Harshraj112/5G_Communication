@@ -18,6 +18,7 @@ from gymnasium import spaces
 from config import (
     WINDOW_T, HORIZON_H, N_FEATURES,
     RL_SLA_PENALTY_LAMBDA, URLLC_VIOLATION_PENALTY,
+    PPO_URLLC_MIN_ALLOCATION,
     INITIAL_ALLOC,
 )
 from environment.fiveg_env import FiveGEnvironment
@@ -109,14 +110,18 @@ class NetworkSliceEnv(gym.Env):
         action = np.exp(action - action.max())
         action = action / action.sum()
 
-        # Safety floor: URLLC always gets at least 15% bandwidth
-        # (prevents degenerate zero-allocation causing latency blow-up)
-        action[1] = max(action[1], 0.15)
+        # Adaptive URLLC allocation floor based on demand
+        # Higher demand → need higher allocation floor
+        idx = min(self._record_ptr + self._step_idx, len(self.sim_records) - 1)
+        record = self.sim_records[idx]
+        urllc_demand = record.get("URLLC", 0.0)
+        
+        # Scale floor from 0.08 to 0.20 based on demand (0-25 Mbps range)
+        adaptive_floor = PPO_URLLC_MIN_ALLOCATION + (min(urllc_demand, 25.0) / 25.0) * 0.12
+        action[1] = max(action[1], adaptive_floor)
         action = action / action.sum()
 
         # Get current demand from simulation records
-        idx = min(self._record_ptr + self._step_idx, len(self.sim_records) - 1)
-        record = self.sim_records[idx]
         demand = {"eMBB": record["eMBB"], "URLLC": record["URLLC"], "mMTC": record["mMTC"]}
 
         # Update predictor buffer

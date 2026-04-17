@@ -46,9 +46,10 @@ N_HEADS = 4  # Multi-head attention heads
 N_LAYERS = 2  # Encoder layers
 DROPOUT = 0.1
 TRANSFORMER_LR = 3e-4
-TRANSFORMER_EPOCHS = 5
+TRANSFORMER_EPOCHS = 8  # Increased from 5 for better convergence
 TRANSFORMER_BATCH = 256
 PRETRAIN_STEPS = 2000  # Simulation steps to generate training data
+SPIKE_WEIGHT = 2.0  # Amplify loss for high-demand samples during training
 
 MODEL_WEIGHTS_PATH = "predictor/model_weights.pt"
 SCALER_PATH = "predictor/scaler.pkl"
@@ -62,8 +63,10 @@ PPO_LEARNING_RATE = 3e-4
 PPO_N_STEPS = 2048
 PPO_BATCH_SIZE = 64
 PPO_N_EPOCHS = 10
-RL_SLA_PENALTY_LAMBDA = 0.5  # Weight of SLA violations in reward
-URLLC_VIOLATION_PENALTY = 5.0  # Extra penalty multiplier for URLLC violations
+RL_SLA_PENALTY_LAMBDA = 2.0  # Increased: Weight of SLA violations in reward (was 0.5)
+URLLC_VIOLATION_PENALTY = 10.0  # Increased: Extra penalty multiplier for URLLC violations (was 5.0)
+PPO_ENTROPY_COEF = 0.05  # Increased exploration to prevent fixed policies (was 0.01)
+PPO_URLLC_MIN_ALLOCATION = 0.08  # Reduced: min URLLC allocation to allow more flexibility (was 0.15)
 
 PPO_MODEL_PATH = "rl_agent/ppo_5g_model"
 
@@ -71,7 +74,7 @@ PPO_MODEL_PATH = "rl_agent/ppo_5g_model"
 # Dashboard / Flask
 # ─────────────────────────────────────────────
 FLASK_HOST = "0.0.0.0"
-FLASK_PORT = 5000
+FLASK_PORT = 5001
 SSE_INTERVAL = 0.5  # Seconds between SSE pushes
 REWARD_WINDOW = 50  # Rolling window for reward smoothing
 

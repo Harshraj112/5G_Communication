@@ -14,9 +14,6 @@ venv.bak/
 
 # Project logs/models
 logs/
-*.zip
-*.pth
-*.pt
 
 # OS specific
 .DS_Store

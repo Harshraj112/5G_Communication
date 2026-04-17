@@ -29,6 +29,7 @@ from config import (
     TRANSFORMER_EPOCHS,
     TRANSFORMER_BATCH,
     PRETRAIN_STEPS,
+    SPIKE_WEIGHT,
     MODEL_WEIGHTS_PATH,
     SCALER_PATH,
 )
@@ -117,9 +118,18 @@ def train_transformer(
         for x_batch, y_batch in pbar:
             x_batch = x_batch.to(device)
             y_batch = y_batch.to(device)
+            
+            # Compute sample weights: spike-weighted loss for high-demand futures
+            # If max demand in y > 70th percentile, weight this sample higher
+            y_max = y_batch.max(dim=1)[0].max(dim=1)[0]  # (batch,)
+            spike_threshold = y_max.median() * 1.2
+            sample_weights = torch.where(y_max > spike_threshold, SPIKE_WEIGHT, 1.0)  # (batch,)
+            
             optimizer.zero_grad()
             pred = model(x_batch)
-            loss = criterion(pred, y_batch)
+            # Compute weighted MSE loss
+            mse_loss = ((pred - y_batch) ** 2).mean(dim=(1, 2))  # (batch,)
+            loss = (mse_loss * sample_weights).mean()
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
@@ -221,31 +231,40 @@ class TrafficPredictor:
 
 
 def fast_simulate(num_steps: int, num_ues: int = 1000, seed: int = 42) -> list[dict]:
-    """Fast vectorized simulation using numpy (no SimPy)."""
+    """Fast vectorized simulation using numpy (no SimPy).
+
+    Demand scales are set so that a reasonable PPO policy (e.g. 60/30/10 split)
+    can satisfy all three SLAs simultaneously:
+      - eMBB  : ~190 Mbps avg  (capacity at 60%: 300 Mbps → SLA 30 Mbps ✓)
+      - URLLC : ~50  Mbps avg  (capacity at 25%: 125 Mbps → lat ~0.15ms  ✓)
+      - mMTC  : ~2   Mbps avg  (capacity at 10%: 50  Mbps → PDR ~1.0     ✓)
+    """
     rng = np.random.default_rng(seed)
-    n_embb = int(num_ues * 0.4)
+    n_embb  = int(num_ues * 0.4)
     n_urllc = int(num_ues * 0.3)
-    n_mmtc = num_ues - n_embb - n_urllc
+    n_mmtc  = num_ues - n_embb - n_urllc
 
     t = np.arange(num_steps)
-    embb = rng.exponential(50, num_steps) * rng.choice(
-        [1.0, 3.0], num_steps, p=[0.8, 0.2]
-    )
-    embb += n_embb * 2
 
-    urllc = 2.0 + rng.uniform(-0.4, 0.4, num_steps)
-    urllc *= n_urllc * 10
+    # eMBB: bursty exponential traffic, ~120–300 Mbps range
+    embb  = rng.exponential(50, num_steps) * rng.choice([1.0, 3.0], num_steps, p=[0.8, 0.2])
+    embb  += n_embb * 0.3          # base ≈ 120 Mbps  (was n_embb*2 = 800)
 
-    mmtc = 0.5 + rng.uniform(-0.05, 0.05, num_steps)
-    mmtc *= n_mmtc
+    # URLLC: regular packet arrivals, ~40–60 Mbps aggregate
+    urllc  = 2.0 + rng.uniform(-0.4, 0.4, num_steps)
+    urllc *= 25                    # ≈ 50 Mbps         (was n_urllc*10 = 6 000)
+
+    # mMTC: low-rate IoT, ~1.5–2.5 Mbps aggregate
+    mmtc  = 0.5 + rng.uniform(-0.05, 0.05, num_steps)
+    mmtc *= 4                      # ≈ 2 Mbps           (was n_mmtc = 150)
 
     return [
         {
-            "eMBB": round(e, 4),
-            "URLLC": round(u, 4),
-            "mMTC": round(m, 4),
+            "eMBB":  round(float(e), 4),
+            "URLLC": round(float(u), 4),
+            "mMTC":  round(float(m), 4),
             "active_users": [n_embb, n_urllc, n_mmtc],
-            "t": ti,
+            "t": int(ti),
         }
         for ti, e, u, m in zip(t, embb, urllc, mmtc)
     ]

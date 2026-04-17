@@ -22,6 +22,7 @@ from config import (
     PPO_N_STEPS,
     PPO_BATCH_SIZE,
     PPO_N_EPOCHS,
+    PPO_ENTROPY_COEF,
     PPO_MODEL_PATH,
 )
 from rl_agent.network_env import NetworkSliceEnv
@@ -135,9 +136,9 @@ class PPOAgent:
             gamma=0.99,
             gae_lambda=0.95,
             clip_range=0.2,
-            ent_coef=0.01,
+            ent_coef=PPO_ENTROPY_COEF,  # Increased to 0.05 for more exploration
             verbose=1,
-            tensorboard_log="logs/tensorboard/",
+            tensorboard_log=None,
         )
 
         callbacks = [MetricsCallback(self.metrics_store)]
@@ -145,7 +146,7 @@ class PPOAgent:
         self.model.learn(
             total_timesteps=total_timesteps,
             callback=callbacks,
-            progress_bar=True,
+            progress_bar=False,  # Disabled to avoid tqdm/rich dependency issues
         )
 
         os.makedirs(os.path.dirname(PPO_MODEL_PATH) or ".", exist_ok=True)
@@ -237,7 +238,7 @@ class SACAgent:
             gamma=0.99,
             tau=0.005,
             verbose=1,
-            tensorboard_log="logs/tensorboard_sac/",
+            tensorboard_log=None,
         )
 
         callbacks = [MetricsCallback(self.metrics_store)]
@@ -245,7 +246,7 @@ class SACAgent:
         self.model.learn(
             total_timesteps=total_timesteps,
             callback=callbacks,
-            progress_bar=True,
+            progress_bar=False,  # Disabled to avoid tqdm/rich dependency issues
         )
 
         model_path = PPO_MODEL_PATH.replace("ppo", "sac")

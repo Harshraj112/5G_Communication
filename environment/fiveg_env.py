@@ -119,19 +119,30 @@ class FiveGEnvironment:
         """
         Scalar QoS reward in [0, 1].
         Combines normalised throughput, latency, and PDR.
+        Heavily penalizes SLA violations.
         """
         qos = self.last_qos
+        sla_ok = self.last_sla_ok
 
         # eMBB: normalise throughput (target = SLA_THROUGHPUT_EMBB)
         embb_score  = min(qos["eMBB_throughput_Mbps"] / SLA_THROUGHPUT_EMBB, 1.0)
+        # If SLA violated, score drops sharply
+        if not sla_ok[0]:
+            embb_score = embb_score * 0.3
 
         # URLLC: normalise latency (target ≤ 1 ms → score = 1 if ≤ 0.5ms)
         urllc_score = float(np.clip(
             1.0 - (qos["URLLC_latency_ms"] - 0.1) / SLA_LATENCY_URLLC_MS, 0.0, 1.0
         ))
+        # If SLA violated, score drops dramatically (URLLC is critical)
+        if not sla_ok[1]:
+            urllc_score = urllc_score * 0.1
 
         # mMTC: PDR directly as score
         mmtc_score  = qos["mMTC_PDR"]
+        # If SLA violated, score drops sharply
+        if not sla_ok[2]:
+            mmtc_score = mmtc_score * 0.3
 
         # Weighted average (URLLC weighted higher due to strict SLA)
         score = 0.30 * embb_score + 0.50 * urllc_score + 0.20 * mmtc_score
