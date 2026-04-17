@@ -15,6 +15,10 @@ venv.bak/
 # Project logs/models
 logs/
 
+# Markdown files (except README.md)
+*.md
+!README.md
+
 # OS specific
 .DS_Store
 .DS_Store?
