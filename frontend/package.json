@@ -1,0 +1,26 @@
+{
+  "name": "5g-dashboard-frontend",
+  "version": "1.0.0",
+  "description": "5G Network Intelligence Dashboard",
+  "type": "module",
+  "private": true,
+  "homepage": "./",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "vite"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "plotly.js": "^2.27.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.0.0",
+    "vite": "^4.3.0"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}

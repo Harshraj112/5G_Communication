@@ -18,12 +18,31 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from flask import Flask, Response, render_template, request, jsonify
 from flask_cors import CORS
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from config import FLASK_HOST, FLASK_PORT, SSE_INTERVAL, REWARD_WINDOW
 
 app = Flask(__name__, template_folder="templates")
 app.config["TEMPLATES_AUTO_RELOAD"] = True   # always serve fresh templates
-CORS(app)
+
+# Configure CORS for production
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+CORS(app, resources={
+    r"/stream": {
+        "origins": [FRONTEND_URL, "http://localhost:3000", "http://localhost:5173"],
+        "methods": ["GET", "OPTIONS"],
+        "supports_credentials": True,
+        "allow_headers": ["Content-Type"]
+    },
+    r"/api/*": {
+        "origins": [FRONTEND_URL, "http://localhost:3000", "http://localhost:5173"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "supports_credentials": True,
+        "allow_headers": ["Content-Type"]
+    }
+})
 
 # ─────────────────────────────────────────────
 # Shared state (thread-safe) — use list of queues for broadcast

@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>5G Network Intelligence Dashboard</title>
+  <meta name="description" content="Real-time 5G network slice resource management with AI-driven bandwidth allocation, QoS monitoring, and SLA compliance tracking." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #03070f;
+      --card:     rgba(15, 23, 42, 0.72);
+      --card-h:   rgba(15, 23, 42, 0.95);
+      --border:   rgba(255, 255, 255, 0.08);
+      --embb:     #10b981;
+      --urllc:    #ef4444;
+      --mmtc:     #f59e0b;
+      --good:     #10b981;
+      --bad:      #ef4444;
+      --accent:   #6366f1;
+      --text:     #f1f5f9;
+      --muted:    #94a3b8;
+      --font:     'Outfit', system-ui, sans-serif;
+      --mono:     'JetBrains Mono', monospace;
+      --radius:   16px;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 10% 5%,  rgba(16,185,129,0.07) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 50% at 85% 85%, rgba(99,102,241,0.07) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 50% 50%, rgba(239,68,68,0.04)  0%, transparent 60%);
+    }
+
+    .app { position: relative; z-index: 1; }
+
+    /* ── Header ───────────────────────────────────────── */
+    header {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 32px;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(20px) saturate(160%);
+      background: rgba(3, 7, 15, 0.65);
+    }
+    .header-left { display: flex; align-items: center; gap: 14px; }
+    .logo {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: linear-gradient(135deg, #10b981, #6366f1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 0 24px rgba(16,185,129,0.3);
+      border: 1px solid rgba(255,255,255,0.12);
+      flex-shrink: 0;
+    }
+    header h1 {
+      font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em;
+      background: linear-gradient(to right, #f8fafc, #94a3b8);
+      background-clip: text; /* Added standard property for compatibility */
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    header .sub { font-size: 0.76rem; color: var(--muted); margin-top: 2px; }
+    .header-status {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 30px; padding: 6px 16px;
+      font-size: 0.82rem; color: var(--muted);
+    }
+    .live-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.55; transform: scale(1.2); }
+    }
+
+    /* ── KPI Strip ────────────────────────────────────── */
+    .kpi-strip {
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      gap: 18px; padding: 20px 32px;
+      animation: fadeUp 0.6s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      display: flex; flex-direction: column; gap: 8px;
+      backdrop-filter: blur(10px);
+      transition: transform 0.3s ease, border-color 0.3s, box-shadow 0.3s;
+    }
+    .kpi-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(255,255,255,0.18);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.4);
+    }
+    .kpi-label {
+      font-size: 0.71rem; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    .kpi-value {
+      font-size: 2rem; font-weight: 800;
+      font-family: var(--mono); line-height: 1.1; letter-spacing: -0.03em;
+    }
+    .kpi-sub { font-size: 0.74rem; color: var(--muted); }
+    .sla-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.71rem; font-weight: 600;
+      padding: 4px 10px; border-radius: 8px; width: fit-content;
+    }
+    .sla-badge.ok   { background: rgba(16,185,129,0.1); color: var(--good); border: 1px solid rgba(16,185,129,0.25); }
+    .sla-badge.fail { background: rgba(239,68,68,0.1);  color: var(--bad);  border: 1px solid rgba(239,68,68,0.25); animation: shake 0.5s linear infinite; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25%       { transform: translateX(-2px); }
+      75%       { transform: translateX(2px); }
+    }
+
+    /* ── Cards ────────────────────────────────────────── */
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      backdrop-filter: blur(10px);
+      transition: border-color 0.3s;
+    }
+    .chart-card:hover { border-color: rgba(255,255,255,0.14); }
+    .chart-card.wide  { grid-column: span 2; }
+    .chart-title {
+      font-size: 0.93rem; font-weight: 600;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .chart-title .icon { font-size: 1.05rem; opacity: 0.85; }
+    .chart-sub { font-size: 0.76rem; color: var(--muted); margin-top: 4px; margin-bottom: 14px; }
+
+    /* ── Layout Grids ─────────────────────────────────── */
+    .main-grid {
+      display: grid; grid-template-columns: 3fr 2fr;
+      gap: 18px; padding: 0 32px 18px;
+    }
+    .gauges-row {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 18px; padding: 0 32px 18px;
+    }
+    .bottom-row {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 18px; padding: 0 32px 32px;
+      align-items: stretch;
+    }
+
+    /* ── Model Status Grid ────────────────────────────── */
+    #model-status {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; padding-top: 6px;
+      height: 100%;
+    }
+    .status-item {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .status-item label {
+      display: block; font-size: 0.67rem; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.07em;
+    }
+    .status-item span {
+      display: block; font-size: 0.9rem;
+      font-family: var(--mono); font-weight: 600;
+      color: var(--text); margin-top: 3px;
+    }
+
+    /* ── Overlay ──────────────────────────────────────── */
+    #overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 18px;
+      background: rgba(3,7,15,0.95); backdrop-filter: blur(20px);
+      text-align: center;
+    }
+    .spinner {
+      width: 56px; height: 56px;
+      border: 4px solid rgba(255,255,255,0.06);
+      border-top-color: #10b981; border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #overlay h2 { font-size: 1.5rem; font-weight: 700; }
+    #overlay p  { font-size: 0.86rem; color: var(--muted); max-width: 380px; line-height: 1.65; }
+    #overlay code { color: #10b981; font-family: var(--mono); }
+
+    /* ── Footer ───────────────────────────────────────── */
+    .footer {
+      padding: 18px 32px;
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between;
+      font-size: 0.76rem; color: var(--muted);
+    }
+
+    /* ── Responsive ───────────────────────────────────── */
+    @media (max-width: 1100px) {
+      .kpi-strip   { grid-template-columns: repeat(2, 1fr); }
+      .main-grid   { grid-template-columns: 1fr; }
+      .chart-card.wide { grid-column: span 1; }
+      .gauges-row  { grid-template-columns: 1fr; }
+      .bottom-row  { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="react">
+    /* {% raw %} */
+    const { useState, useEffect, useRef, useMemo } = React;
+
+    // Constants
+    const MAX_PTS = 200;
+    const ROLL_W  = 100;  // Increased from 50 for smoother reward curves
+    const CLRS = {
+      embb: '#10b981',
+      urllc: '#3b82f6',
+      mmtc: '#f59e0b',
+      reward: '#818cf8',
+      muted: '#94a3b8',
+    };
+    const BASE_LAYOUT = {
+      paper_bgcolor: 'rgba(0,0,0,0)',
+      plot_bgcolor:  'rgba(0,0,0,0)',
+      font: { family: 'Outfit, sans-serif', color: CLRS.muted, size: 11 },
+      margin: { l: 46, r: 12, t: 6, b: 40 },
+      xaxis: { gridcolor: 'rgba(255,255,255,0.05)', zerolinecolor: 'rgba(255,255,255,0.05)' },
+      yaxis: { gridcolor: 'rgba(255,255,255,0.05)', zerolinecolor: 'rgba(255,255,255,0.05)' },
+      legend: { bgcolor: 'rgba(0,0,0,0)', font: { size: 10 } },
+    };
+    const PLT_CFG = { displayModeBar: false, responsive: true };
+
+    // Helpers
+    const trim = arr => arr.length > MAX_PTS ? arr.slice(-MAX_PTS) : arr;
+
+    const roll = (arr, w = ROLL_W) =>
+      arr.map((_, i) => {
+        const s = arr.slice(Math.max(0, i - w + 1), i + 1);
+        return s.reduce((a, b) => a + b, 0) / s.length;
+      });
+
+    const extractQos = d => {
+      if (!d) return [0, 0, 0];
+      if (Array.isArray(d.qos))
+        return [d.qos[0] ?? 0, d.qos[1] ?? 0, d.qos[2] ?? 0];
+      const q = d.qos ?? {};
+      return [q.eMBB_throughput_Mbps ?? 0, q.URLLC_latency_ms ?? 0, q.mMTC_PDR ?? 0];
+    };
+
+    const fmt = (v, n) => (v !== undefined && v !== null) ? Number(v).toFixed(n) : '—';
+
+    // PlotlyChart
+    function PlotlyChart({ traces, layout, height = 230 }) {
+      const ref = useRef(null);
+      useEffect(() => {
+        if (!ref.current || !traces?.length) return;
+        Plotly.react(ref.current, traces, { ...BASE_LAYOUT, ...layout }, PLT_CFG);
+      }, [traces, layout]);
+      return <div ref={ref} style={{ width: '100%', height }} />;
+    }
+
+    // Gauge
+    function Gauge({ value, min, max, color, unit, invertColors }) {
+      const ref   = useRef(null);
+      const ready = useRef(false);
+
+      const buildTrace = v => [{
+        type: 'indicator', mode: 'gauge+number',
+        value: v ?? 0,
+        number: { suffix: unit ? ` ${unit}` : '', font: { size: 28, color } },
+        gauge: {
+          axis: { range: [min, max], tickfont: { size: 9, color: CLRS.muted } },
+          bar:  { color, thickness: 0.28 },
+          bgcolor: 'rgba(0,0,0,0)', borderwidth: 0,
+          steps: (() => {
+            const r = max - min;
+            const [c0, c1, c2] = invertColors
+              ? ['rgba(16,185,129,0.14)', 'rgba(245,158,11,0.14)', 'rgba(239,68,68,0.14)']
+              : ['rgba(239,68,68,0.10)', 'rgba(245,158,11,0.10)', 'rgba(16,185,129,0.18)'];
+            return [
+              { range: [min,        min + r*0.33], color: c0 },
+              { range: [min + r*0.33, min + r*0.66], color: c1 },
+              { range: [min + r*0.66, max],         color: c2 },
+            ];
+          })(),
+        },
+        title: { text: '' },
+      }];
+
+      const gLayout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: CLRS.muted },
+        margin: { l: 18, r: 18, t: 18, b: 8 },
+      };
+
+      useEffect(() => {
+        if (!ref.current) return;
+        const v = value ?? 0;
+        if (!ready.current) {
+          Plotly.newPlot(ref.current, buildTrace(v), gLayout, PLT_CFG);
+          ready.current = true;
+        } else {
+          Plotly.restyle(ref.current, { value: [v] });
+        }
+      }, [value]); // eslint-disable-line
+
+      return <div ref={ref} style={{ width: '100%', height: 190 }} />;
+    }
+
+    // KPICard
+    function KPICard({ label, value, sub, color, slaOk, badgeLabel }) {
+      return (
+        <div className="kpi-card">
+          <div className="kpi-label">{label}</div>
+          <div className="kpi-value" style={{ color }}>{value ?? '—'}</div>
+          <div className="kpi-sub">{sub}</div>
+          {slaOk !== undefined && (
+            <span className={`sla-badge ${slaOk ? 'ok' : 'fail'}`}>
+              {slaOk ? '✓' : '✗'} {badgeLabel ?? (slaOk ? 'SLA OK' : 'SLA FAIL')}
+            </span>
+          )}
+        </div>
+      );
+    }
+
+    // StatusItem
+    function StatusItem({ label, value }) {
+      return (
+        <div className="status-item">
+          <label>{label}</label>
+          <span>{value ?? '—'}</span>
+        </div>
+      );
+    }
+
+    // Overlay
+    function Overlay() {
+      return (
+        <div id="overlay">
+          <div className="spinner" />
+          <h2>Connecting to 5G Pipeline…</h2>
+          <p>
+            Waiting for live data. Make sure <code>python run.py --serve</code> is running,
+            then refresh this page.
+          </p>
+        </div>
+      );
+    }
+
+    // Main App
+    function App() {
+      const [frame,  setFrame]  = useState(null);
+      const [conn,   setConn]   = useState(false);
+      const [clock,  setClock]  = useState('—');
+      const [hist,   setHist]   = useState({
+        t:  [], aE: [], aU: [], aM: [],
+        rw: [], sla:[],
+        dE: [], dU: [], dM: [],
+        fT: [], fE: [], fU: [], fM: [],
+        qE: [], qU: [], qM: [],
+      });
+
+      // SSE connection with auto-reconnect
+      useEffect(() => {
+        let es;
+        function connect() {
+          es = new EventSource('/stream');
+          es.onmessage = ev => {
+            try {
+              const d = JSON.parse(ev.data);
+              setConn(true);
+              setFrame(d);
+              setClock(new Date().toLocaleTimeString());
+              setHist(p => {
+                const qos = extractQos(d);
+                const fc  = d.forecast;
+                const hasFC = Array.isArray(fc) && fc.length > 0;
+                const avgFC = hasFC
+                  ? fc.reduce((acc, r) => [acc[0]+r[0], acc[1]+r[1], acc[2]+r[2]], [0,0,0])
+                      .map(v => v / fc.length)
+                  : null;
+                return {
+                  t:  trim([...p.t,  d.t  ?? 0]),
+                  aE: trim([...p.aE, d.alloc?.eMBB  ?? 0.5]),
+                  aU: trim([...p.aU, d.alloc?.URLLC ?? 0.3]),
+                  aM: trim([...p.aM, d.alloc?.mMTC  ?? 0.2]),
+                  rw: trim([...p.rw, d.reward ?? 0]),
+                  sla:trim([...p.sla,d.sla_violations ?? 0]),
+                  dE: trim([...p.dE, d.demand?.eMBB  ?? 0]),
+                  dU: trim([...p.dU, d.demand?.URLLC ?? 0]),
+                  dM: trim([...p.dM, d.demand?.mMTC  ?? 0]),
+                  fT: hasFC ? trim([...p.fT, d.t ?? 0]) : p.fT,
+                  fE: hasFC ? trim([...p.fE, avgFC[0]]) : p.fE,
+                  fU: hasFC ? trim([...p.fU, avgFC[1]]) : p.fU,
+                  fM: hasFC ? trim([...p.fM, avgFC[2]]) : p.fM,
+                  qE: trim([...p.qE, qos[0]]),
+                  qU: trim([...p.qU, qos[1]]),
+                  qM: trim([...p.qM, qos[2]]),
+                };
+              });
+            } catch { /* ignore parse errors */ }
+          };
+          es.onerror = () => {
+            setConn(false);
+            es.close();
+            setTimeout(connect, 3000);
+          };
+        }
+        connect();
+        return () => es?.close();
+      }, []);
+
+      // Derived values
+      const qos     = useMemo(() => extractQos(frame), [frame]);
+      const sla     = frame?.sla_ok ?? [true, true, true];
+      const avg     = useMemo(() => roll(hist.rw), [hist.rw]);
+      const avgLast = avg.length ? avg[avg.length - 1] : 0;
+      const isAtk   = frame?.label === 'Attack';
+      
+      // Ensure consistent gauge values (round to 3 decimal places for URLLC latency)
+      const gaugeValues = useMemo(() => ({
+        embb: qos[0],
+        urllc: Math.round(qos[1] * 1000) / 1000,  // Consistent precision
+        mmtc: qos[2],
+      }), [qos]);
+
+      // ── Chart Traces (memoised) ────────────────────────────
+      const allocTr = useMemo(() => [
+        { x: hist.t, y: hist.aE, name: 'eMBB',  type: 'scatter', mode: 'none', stackgroup: 'one', fillcolor: 'rgba(16,185,129,0.52)' },
+        { x: hist.t, y: hist.aU, name: 'URLLC', type: 'scatter', mode: 'none', stackgroup: 'one', fillcolor: 'rgba(239,68,68,0.52)'   },
+        { x: hist.t, y: hist.aM, name: 'mMTC',  type: 'scatter', mode: 'none', stackgroup: 'one', fillcolor: 'rgba(245,158,11,0.45)'  },
+      ], [hist.t, hist.aE, hist.aU, hist.aM]);
+
+      const fcTr = useMemo(() => [
+        { x: hist.t,  y: hist.dE, name: 'eMBB actual',     mode: 'lines', line: { color: CLRS.embb,  width: 2 } },
+        { x: hist.fT, y: hist.fE, name: 'eMBB forecast',   mode: 'lines', line: { color: CLRS.embb,  width: 1.5, dash: 'dot' } },
+        { x: hist.t,  y: hist.dU, name: 'URLLC actual',    mode: 'lines', line: { color: CLRS.urllc, width: 2 } },
+        { x: hist.fT, y: hist.fU, name: 'URLLC forecast',  mode: 'lines', line: { color: CLRS.urllc, width: 1.5, dash: 'dot' } },
+        { x: hist.t,  y: hist.dM, name: 'mMTC actual',     mode: 'lines', line: { color: CLRS.mmtc,  width: 2 } },
+        { x: hist.fT, y: hist.fM, name: 'mMTC forecast',   mode: 'lines', line: { color: CLRS.mmtc,  width: 1.5, dash: 'dot' } },
+      ], [hist.t, hist.fT, hist.dE, hist.dU, hist.dM, hist.fE, hist.fU, hist.fM]);
+
+      const rwTr = useMemo(() => [
+        { x: hist.t, y: hist.rw, name: 'Raw',         mode: 'lines', line: { color: 'rgba(129,140,248,0.3)', width: 1 } },
+        { x: hist.t, y: avg,     name: 'Rolling avg',  mode: 'lines', line: { color: CLRS.reward, width: 2.5 } },
+      ], [hist.t, hist.rw, avg]);
+
+      const slaTr = useMemo(() => [
+        { x: hist.t, y: hist.sla, name: 'Violations', type: 'bar',
+          marker: { color: 'rgba(239,68,68,0.58)', line: { color: '#ef4444', width: 1 } } },
+      ], [hist.t, hist.sla]);
+
+      // ── Render ─────────────────────────────────────────────
+      return (
+        <div className="app">
+          {!frame && <Overlay />}
+
+          {/* ── Header ── */}
+          <header>
+            <div className="header-left">
+              <div className="logo">📡</div>
+              <div>
+                <h1>5G Network Intelligence System</h1>
+                <p className="sub">SimPy · Transformer · PPO · Real-Time QoS</p>
+              </div>
+            </div>
+            <div className="header-status">
+              <div
+                className="live-dot"
+                style={{
+                  background:  conn ? '#10b981' : '#ef4444',
+                  boxShadow: `0 0 10px ${conn ? '#10b981' : '#ef4444'}`,
+                }}
+              />
+              <span style={{ fontWeight: 600, color: conn ? '#10b981' : '#ef4444' }}>
+                {conn ? 'LIVE' : 'RECONNECTING'}
+              </span>
+              <span style={{ fontFamily: 'var(--mono)', color: 'var(--text)' }}>
+                t={frame?.t ?? '—'}
+              </span>
+            </div>
+          </header>
+
+          {/* ── KPI Strip ── */}
+          <div className="kpi-strip">
+            <KPICard
+              label="eMBB Throughput"
+              value={fmt(qos[0], 1)}
+              sub="Mbps allocated"
+              color="var(--embb)"
+              slaOk={sla[0]}
+            />
+            <KPICard
+              label="URLLC Latency"
+              value={fmt(qos[1], 3)}
+              sub="ms round-trip"
+              color="var(--urllc)"
+              slaOk={sla[1]}
+            />
+            <KPICard
+              label="mMTC PDR"
+              value={fmt(qos[2], 3)}
+              sub="packet delivery ratio"
+              color="var(--mmtc)"
+              slaOk={sla[2]}
+            />
+            <KPICard
+              label="Cumulative Reward"
+              value={fmt(avgLast, 3)}
+              sub="rolling avg (last 100 steps)"
+              color="var(--accent)"
+              slaOk={undefined}
+            />
+            <KPICard
+              label="Security Status"
+              value={isAtk ? 'ATTACK' : 'CLEAN'}
+              sub={frame?.attack_type || 'Monitoring flows'}
+              color={isAtk ? 'var(--bad)' : 'var(--good)'}
+              slaOk={!isAtk}
+              badgeLabel={isAtk ? 'THREAT DETECTED' : 'SECURE'}
+            />
+          </div>
+
+          {/* ── Main charts ── */}
+          <div className="main-grid">
+            <div className="chart-card wide">
+              <div className="chart-title"><span className="icon">📊</span> Bandwidth Allocation — Live</div>
+              <div className="chart-sub">Stacked fractions of 100 MHz total across eMBB / URLLC / mMTC slices</div>
+              <PlotlyChart
+                traces={allocTr}
+                layout={{ yaxis: { title: 'Fraction', range: [0, 1] } }}
+                height={200}
+              />
+            </div>
+            <div className="chart-card">
+              <div className="chart-title"><span className="icon">🔮</span> Forecast vs Actual Demand</div>
+              <div className="chart-sub">Transformer H=10 step ahead prediction vs ground truth</div>
+              <PlotlyChart
+                traces={fcTr}
+                layout={{ yaxis: { title: 'Demand (Mbps)' }, legend: { orientation: 'h', y: -0.3 } }}
+                height={245}
+              />
+            </div>
+            <div className="chart-card">
+              <div className="chart-title"><span className="icon">📈</span> Reward Curve</div>
+              <div className="chart-sub">Rolling reward — should be positive once all SLAs are met</div>
+              <PlotlyChart
+                traces={rwTr}
+                layout={{ yaxis: { title: 'Reward' } }}
+                height={245}
+              />
+            </div>
+          </div>
+
+          {/* ── Gauges ── */}
+          <div className="gauges-row">
+            <div className="chart-card">
+              <div className="chart-title"><span className="icon">📶</span> eMBB QoS Gauge</div>
+              <Gauge value={gaugeValues.embb} min={0} max={600} color={CLRS.embb}  unit="Mbps" invertColors={false} />
+            </div>
+            <div className="chart-card">
+              <div className="chart-title"><span className="icon">⚡</span> URLLC Latency Gauge</div>
+              <Gauge value={gaugeValues.urllc} min={0} max={10}  color={CLRS.urllc} unit="ms"   invertColors={true}  />
+            </div>
+            <div className="chart-card">
+              <div className="chart-title"><span className="icon">🌐</span> mMTC PDR Gauge</div>
+              <Gauge value={gaugeValues.mmtc} min={0} max={1}   color={CLRS.mmtc}  unit=""     invertColors={false} />
+            </div>
+          </div>
+
+          {/* ── Bottom row ── */}
+          <div className="bottom-row">
+            <div className="chart-card">
+              <div className="chart-title"><span className="icon">📉</span> SLA Violation Rate</div>
+              <div className="chart-sub">Per-timestep violations (aim for 0)</div>
+              <PlotlyChart
+                traces={slaTr}
+                layout={{ yaxis: { title: 'Violations / step', range: [0, 3] } }}
+                height={200}
+              />
+            </div>
+            <div className="chart-card">
+              <div className="chart-title"><span className="icon">🧠</span> Model Status</div>
+              <div className="chart-sub">Live pipeline metrics & allocations</div>
+              <div id="model-status">
+                <StatusItem label="Step"       value={frame?.t} />
+                <StatusItem label="Reward"     value={frame?.reward != null ? fmt(frame.reward, 4) : null} />
+                <StatusItem label="eMBB Alloc" value={frame?.alloc?.eMBB  != null ? `${(frame.alloc.eMBB  * 100).toFixed(1)}%` : null} />
+                <StatusItem label="URLLC Alloc"value={frame?.alloc?.URLLC != null ? `${(frame.alloc.URLLC * 100).toFixed(1)}%` : null} />
+                <StatusItem label="mMTC Alloc" value={frame?.alloc?.mMTC  != null ? `${(frame.alloc.mMTC  * 100).toFixed(1)}%` : null} />
+                <StatusItem label="SLA Status" value={frame?.sla_violations != null ? `${frame.sla_violations}/3 violations` : null} />
+              </div>
+            </div>
+          </div>
+
+          {/* ── Footer ── */}
+          <div className="footer">
+            <span>5G Intelligence System · SimPy + PyTorch Transformer + PPO Agent + Flask SSE</span>
+            <span>{clock}</span>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    /* {% endraw %} */
+  </script>
+</body>
+</html>
