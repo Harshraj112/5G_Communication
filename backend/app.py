@@ -2,7 +2,7 @@
 app.py — Flask server with Server-Sent Events (SSE) for the live 5G dashboard.
 
 Routes:
-    GET /          → serves index.html
+    GET /          → API health check
     GET /stream    → SSE stream of JSON frames pushed by the pipeline
     POST /push     → pipeline writes data here (internal)
 """
@@ -16,7 +16,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from flask import Flask, Response, render_template, request, jsonify
+from flask import Flask, Response, request, jsonify
 from flask_cors import CORS
 
 from config import FLASK_HOST, FLASK_PORT, SSE_INTERVAL, REWARD_WINDOW
@@ -73,11 +73,15 @@ def push_frame(frame: dict):
 
 @app.route("/")
 def index():
-    response = app.make_response(render_template("index.html"))
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-    return response
+    """API health check endpoint."""
+    return {
+        "status": "ok",
+        "message": "5G Intelligence Backend is running",
+        "endpoints": {
+            "stream": "/stream (Server-Sent Events)",
+            "health": "/ (this endpoint)"
+        }
+    }, 200
 
 
 @app.route("/stream")
