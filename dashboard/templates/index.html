@@ -241,18 +241,18 @@
   <div id="root"></div>
 
   <script type="text/babel" data-presets="react">
-    {% raw %}
+    /* {% raw %} */
     const { useState, useEffect, useRef, useMemo } = React;
 
     // Constants
     const MAX_PTS = 200;
     const ROLL_W  = 100;  // Increased from 50 for smoother reward curves
     const CLRS = {
-      embb:   '#10b981',
-      urllc:  '#ef4444',
-      mmtc:   '#f59e0b',
+      embb: '#10b981',
+      urllc: '#3b82f6',
+      mmtc: '#f59e0b',
       reward: '#818cf8',
-      muted:  '#94a3b8',
+      muted: '#94a3b8',
     };
     const BASE_LAYOUT = {
       paper_bgcolor: 'rgba(0,0,0,0)',
@@ -638,7 +638,7 @@
     }
 
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-    {% endraw %}
+    /* {% endraw %} */
   </script>
 </body>
 </html>
