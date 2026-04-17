@@ -55,15 +55,44 @@ export default function App() {
     dM: [],
   })
 
-  // Get backend URL from environment variable
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001'
+  // Smart backend URL selection
+  // Try local first, then fallback to production
+  const [backendUrl, setBackendUrl] = useState(null)
+
+  useEffect(() => {
+    const determineBackendUrl = async () => {
+      // Try localhost first
+      try {
+        const response = await fetch('http://localhost:5001/', { signal: AbortSignal.timeout(2000) })
+        if (response.ok) {
+          console.log('✅ Local backend detected at http://localhost:5001')
+          setBackendUrl('http://localhost:5001')
+          return
+        }
+      } catch (err) {
+        console.log('⚠️ Local backend not available, using production URL')
+      }
+      
+      // Fallback to production URL
+      const prodUrl = import.meta.env.VITE_BACKEND_URL || 'https://fiveg-backend.onrender.com'
+      console.log('Using production backend:', prodUrl)
+      setBackendUrl(prodUrl)
+    }
+
+    determineBackendUrl()
+  }, [])
+
+  // Get backend URL from environment variable (backup)
+  const BACKEND_URL = backendUrl || import.meta.env.VITE_BACKEND_URL || 'https://fiveg-backend.onrender.com'
 
   // SSE Connection
   useEffect(() => {
+    if (!backendUrl) return // Wait for backend URL to be determined
+
     let es
 
     function connect() {
-      const url = `${BACKEND_URL}/stream`
+      const url = `${backendUrl}/stream`
       console.log('Connecting to:', url)
 
       es = new EventSource(url)
@@ -102,7 +131,7 @@ export default function App() {
 
     connect()
     return () => es?.close()
-  }, [])
+  }, [backendUrl])
 
   // Chart data
   const allocTr = useMemo(
