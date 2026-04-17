@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: 5g-backend
+    env: python
+    plan: free
+    pythonVersion: 3.11
+    region: oregon
+    
+    # Build Configuration
+    buildCommand: |
+      pip install --upgrade pip && \
+      pip install -r backend/requirements.txt
+    
+    # Start Command - Run Flask with Gunicorn
+    startCommand: |
+      cd backend && \
+      gunicorn --bind 0.0.0.0:$PORT \
+               --workers 2 \
+               --worker-class sync \
+               --timeout 300 \
+               --access-logfile - \
+               --error-logfile - \
+               wsgi:app
+    
+    # Environment Variables (FRONTEND_URL is optional - add after deploying frontend)
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: "false"
+      - key: PORT
+        value: 5001
+      
+    # Expose port
+    port: 5001
+    
+    # Healthcheck
+    healthCheckPath: /
+    
+    # Auto-deploy on push
+    repo: https://github.com/Harshraj112/5G_Communication
+    branch: main
+    autoDeploy: true
